@@ -57,17 +57,17 @@ class Application:
         # Get turn detection settings with defaults
         vad_threshold = float(os.environ.get("VAD_THRESHOLD", "0.5"))
         vad_prefix_padding_ms = int(os.environ.get("VAD_PREFIX_PADDING_MS", "300"))
-        vad_silence_duration_ms = int(os.environ.get("VAD_SILENCE_DURATION_MS", "500"))
+        vad_silence_duration_ms = int(os.environ.get("VAD_SILENCE_DURATION_MS", "800"))
 
         # Turn detection mode. "semantic_vad" is OpenAI's recommended mode for
         # natural conversation: it detects a *semantic* end-of-utterance instead
         # of a fixed silence window, so it doesn't cut the user off on a pause
         # and is more resistant to speaker->mic echo. "server_vad" is the classic
         # silence-based detector tuned by the vad_* values above.
-        turn_detection_type = os.environ.get("TURN_DETECTION_TYPE", "semantic_vad").strip().lower()
+        turn_detection_type = os.environ.get("TURN_DETECTION_TYPE", "server_vad").strip().lower()
         if turn_detection_type not in ("semantic_vad", "server_vad"):
-            logger.warning(f"⚠️ Unknown TURN_DETECTION_TYPE '{turn_detection_type}', falling back to semantic_vad")
-            turn_detection_type = "semantic_vad"
+            logger.warning(f"⚠️ Unknown TURN_DETECTION_TYPE '{turn_detection_type}', falling back to server_vad")
+            turn_detection_type = "server_vad"
         # semantic_vad eagerness: "low" waits longest before deciding the user is
         # done (fewest mid-sentence cut-offs). low | medium | high | auto.
         vad_eagerness = os.environ.get("VAD_EAGERNESS", "low").strip().lower()

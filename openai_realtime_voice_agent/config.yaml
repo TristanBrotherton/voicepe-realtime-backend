@@ -1,5 +1,5 @@
 name: OpenAI Realtime Voice Agent
-version: "0.3.1"
+version: "0.3.2"
 slug: openai_realtime_voice_agent
 description: Voice control using OpenAI Realtime API with WebSocket support for ESP32 devices
 url: https://github.com/fjfricke/ha-openai-realtime
@@ -41,12 +41,18 @@ options:
   # barge-ins from speaker->mic echo when handsfree barge-in is enabled.
   vad_threshold: 0.5
   vad_prefix_padding_ms: 300
-  vad_silence_duration_ms: 500
-  # Turn detection mode. "semantic_vad" (recommended by OpenAI) detects a
-  # natural end-of-utterance instead of a fixed silence window: it doesn't cut
-  # you off when you pause and resists speaker->mic echo. "server_vad" is the
-  # classic silence-based detector tuned by the three vad_* values above.
-  turn_detection_type: "semantic_vad"
+  # How long (ms) of silence ends your turn (server_vad only). 800 leaves room
+  # to pause briefly without being cut off mid-sentence; raise toward 1000-1200
+  # if it still cuts you off, lower it if responses feel sluggish.
+  vad_silence_duration_ms: 800
+  # Turn detection mode. "server_vad" is the proven default: classic
+  # silence-based detection tuned by the three vad_* values above, and it drives
+  # responses correctly across multiple turns.
+  # "semantic_vad" detects a natural end-of-utterance and supports
+  # interrupt_response, BUT is currently EXPERIMENTAL with this add-on: in the
+  # Pipecat context-aggregator pipeline it only answers the FIRST turn (follow-up
+  # turns get no response). Leave this on server_vad until that is fixed.
+  turn_detection_type: "server_vad"
   # semantic_vad only: how eager to end the user's turn. "low" waits longest
   # (fewest mid-sentence cut-offs). low | medium | high | auto.
   vad_eagerness: "low"
