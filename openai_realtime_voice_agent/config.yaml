@@ -1,5 +1,5 @@
 name: OpenAI Realtime Voice Agent
-version: "0.3.4"
+version: "0.3.5"
 slug: openai_realtime_voice_agent
 description: Voice control using OpenAI Realtime API with WebSocket support for ESP32 devices
 url: https://github.com/fjfricke/ha-openai-realtime
@@ -45,21 +45,22 @@ options:
   # to pause briefly without being cut off mid-sentence; raise toward 1000-1200
   # if it still cuts you off, lower it if responses feel sluggish.
   vad_silence_duration_ms: 800
-  # Turn detection mode. "server_vad" is the proven default: classic
-  # silence-based detection tuned by the three vad_* values above, and it drives
-  # responses correctly across multiple turns.
-  # "semantic_vad" detects a natural end-of-utterance and supports
-  # interrupt_response, BUT is currently EXPERIMENTAL with this add-on: in the
-  # Pipecat context-aggregator pipeline it only answers the FIRST turn (follow-up
-  # turns get no response). Leave this on server_vad until that is fixed.
-  turn_detection_type: "server_vad"
+  # Turn detection mode. Default "semantic_vad": detects a natural end-of-utterance
+  # (doesn't cut you off on a pause), is echo-resistant, and — crucially — sets
+  # create_response=False so ONLY the pipeline creates the response. That avoids
+  # the server_vad double-response race ("conversation_already_has_active_response")
+  # that cut replies short around tool calls. (The earlier semantic_vad
+  # "only-first-turn" issue was the separate phase-delivery bug, now fixed.)
+  # "server_vad" = classic silence-based detection tuned by the vad_* values above.
+  turn_detection_type: "semantic_vad"
   # semantic_vad only: how eager to end the user's turn. "low" waits longest
   # (fewest mid-sentence cut-offs). low | medium | high | auto.
   vad_eagerness: "low"
   # Allow user speech to interrupt the assistant mid-reply (handsfree barge-in).
-  # If the device's echo cancellation is imperfect and replies get cut short,
-  # set this false and interrupt with the "stop" wake word / center button.
-  interrupt_response: true
+  # Default false: with imperfect device-side echo cancellation, the bot's own
+  # audio can be heard as "speech" and cut the reply short. Interrupt with the
+  # "stop" wake word / center button instead. Set true to try handsfree talk-over.
+  interrupt_response: false
   # Pin the language (ISO code, e.g. "nl" for Dutch). Empty = auto-detect.
   # Stops the model drifting to another language; pair with a language lock in
   # `instructions`.

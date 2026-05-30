@@ -64,10 +64,10 @@ class Application:
         # of a fixed silence window, so it doesn't cut the user off on a pause
         # and is more resistant to speaker->mic echo. "server_vad" is the classic
         # silence-based detector tuned by the vad_* values above.
-        turn_detection_type = os.environ.get("TURN_DETECTION_TYPE", "server_vad").strip().lower()
+        turn_detection_type = os.environ.get("TURN_DETECTION_TYPE", "semantic_vad").strip().lower()
         if turn_detection_type not in ("semantic_vad", "server_vad"):
-            logger.warning(f"⚠️ Unknown TURN_DETECTION_TYPE '{turn_detection_type}', falling back to server_vad")
-            turn_detection_type = "server_vad"
+            logger.warning(f"⚠️ Unknown TURN_DETECTION_TYPE '{turn_detection_type}', falling back to semantic_vad")
+            turn_detection_type = "semantic_vad"
         # semantic_vad eagerness: "low" waits longest before deciding the user is
         # done (fewest mid-sentence cut-offs). low | medium | high | auto.
         vad_eagerness = os.environ.get("VAD_EAGERNESS", "low").strip().lower()
@@ -78,7 +78,7 @@ class Application:
         # (handsfree barge-in). With imperfect device-side AEC, set this false so
         # speaker echo can't cut replies short; interrupt then only via the
         # device "stop" wake word / center button.
-        interrupt_response = os.environ.get("INTERRUPT_RESPONSE", "true").strip().lower() == "true"
+        interrupt_response = os.environ.get("INTERRUPT_RESPONSE", "false").strip().lower() == "true"
         # Pin the input-transcription language (ISO code, e.g. "nl"). Empty = let
         # the model auto-detect. Helps stop the model drifting to another
         # language; pair it with an explicit language lock in `instructions`.
