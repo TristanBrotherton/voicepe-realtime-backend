@@ -20,6 +20,7 @@ from app.raw_audio_serializer import RawAudioSerializer
 from app.session_manager import SessionManager
 from app.audio_recording_service import AudioRecordingService
 from app.phase_emitter import PhaseEmitter
+from app.transcript_logger import TranscriptLogger
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +243,12 @@ class WebSocketHandler:
             ])
         else:
             pipeline_components.append(openai_service)
-        
+
+        # Log the spoken transcript (assistant reply text + user transcript when
+        # available) to the add-on log. Placed right after the OpenAI service, on
+        # the downstream path where LLMTextFrame / TranscriptionFrame flow out.
+        pipeline_components.append(TranscriptLogger())
+
         pipeline_components.append(output_activity_tracker)
 
         # Emit va_client phase messages (listening/thinking/replying/idle) to
