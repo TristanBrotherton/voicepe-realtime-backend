@@ -1,7 +1,8 @@
 """Simple serializer for raw binary PCM audio frames."""
+import json
 import logging
 import os
-from pipecat.frames.frames import InputAudioRawFrame, OutputAudioRawFrame, Frame
+from pipecat.frames.frames import InputAudioRawFrame, OutputAudioRawFrame, Frame, InterruptionFrame
 from pipecat.serializers.base_serializer import FrameSerializer, FrameSerializerType
 
 logger = logging.getLogger(__name__)
@@ -39,8 +40,26 @@ class RawAudioSerializer(FrameSerializer):
         Returns:
             InputAudioRawFrame with the audio data, or None if invalid
         """
+        # Device CONTROL frames arrive as TEXT (str). pipecat 0.0.97's websocket
+        # transport has NO on_message event and routes EVERY incoming frame
+        # through this serializer, so the device's {"type":"interrupt"} (sent
+        # when the user says the "stop" wake word) would be silently dropped and
+        # the assistant's reply would never stop. Translate it into a pipecat
+        # InterruptionFrame here; DeviceInterruptCanceller (in the pipeline) turns
+        # that into an explicit OpenAI response.cancel.
+        if isinstance(message, str):
+            try:
+                data = json.loads(message)
+            except (ValueError, TypeError):
+                return None
+            if isinstance(data, dict) and data.get("type") == "interrupt":
+                logger.info("🛑 device interrupt received")
+                return InterruptionFrame()
+            # ping / start / other control frames: nothing to inject downstream.
+            return None
+
         if not isinstance(message, bytes):
-            # Skip non-binary messages (text/JSON)
+            # Skip anything that isn't bytes or a known text control frame.
             return None
 
         # Validate audio format: 16-bit = 2 bytes per sample
