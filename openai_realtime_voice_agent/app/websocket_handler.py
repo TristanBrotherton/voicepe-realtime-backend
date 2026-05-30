@@ -119,20 +119,25 @@ class WebSocketHandler:
         port: int = 8080,
         session_manager: Optional[SessionManager] = None,
         audio_recording_service: Optional[AudioRecordingService] = None,
+        follow_up_ms: int = 0,
     ):
         """
         Initialize WebSocket handler.
-        
+
         Args:
             host: Host address to bind to
             port: Port to listen on
             session_manager: Session manager instance
             audio_recording_service: Audio recording service instance
+            follow_up_ms: How long (ms) the device should keep the mic open
+                after a reply so the user can answer without a wake word. Sent to
+                the device in the `hello` handshake. 0 = turn-based (no window).
         """
         self.host = host
         self.port = port
         self.session_manager = session_manager
         self.audio_recording_service = audio_recording_service
+        self.follow_up_ms = max(0, int(follow_up_ms))
 
         self.transport: Optional[WebsocketServerTransport] = None
         self.pipeline: Optional[Pipeline] = None
@@ -389,7 +394,13 @@ class WebSocketHandler:
             # Handshake ack expected by the va_client protocol (server -> device
             # "hello"). The Voice PE firmware tolerates its absence, but sending
             # it keeps both sides in lockstep with the documented protocol.
-            await self._send_json(websocket, {"type": "hello", "audio_out": "pcm"})
+            # follow_up_ms tells the device how long to keep the mic open after a
+            # reply (post-reply follow-up window); 0/absent = turn-based. Sent on
+            # every connect so an add-on config change takes effect on reconnect.
+            await self._send_json(
+                websocket,
+                {"type": "hello", "audio_out": "pcm", "follow_up_ms": self.follow_up_ms},
+            )
             await on_client_connected_callback(client_id)
 
         @transport.event_handler("on_client_disconnected")

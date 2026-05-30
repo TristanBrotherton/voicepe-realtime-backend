@@ -123,6 +123,18 @@ class Application:
         # Get recording setting (optional, defaults to false)
         enable_recording = os.environ.get("ENABLE_RECORDING", "false").lower() == "true"
         
+        # Post-reply follow-up window: how many seconds the device keeps the mic
+        # open after the assistant finishes so the user can answer back without
+        # re-saying the wake word. Sent to the device in the `hello` handshake as
+        # follow_up_ms; the device opens the mic (after its TTS tail drains) and
+        # shows the listening LED for that long. 0 disables (turn-based).
+        try:
+            follow_up_listen_seconds = int(os.environ.get("FOLLOW_UP_LISTEN_SECONDS", "8"))
+        except (TypeError, ValueError):
+            follow_up_listen_seconds = 8
+        follow_up_listen_seconds = max(0, min(60, follow_up_listen_seconds))
+        follow_up_ms = follow_up_listen_seconds * 1000
+
         # Get session reuse timeout and initialize session manager
         session_reuse_timeout = float(os.environ.get("SESSION_REUSE_TIMEOUT_SECONDS", "300"))
         self.session_manager = SessionManager(reuse_timeout=session_reuse_timeout)
@@ -151,7 +163,12 @@ class Application:
             host=websocket_host,
             port=websocket_port,
             session_manager=self.session_manager,
-            audio_recording_service=self.audio_recording_service
+            audio_recording_service=self.audio_recording_service,
+            follow_up_ms=follow_up_ms,
+        )
+        logger.info(
+            f"🔁 Follow-up window: {follow_up_listen_seconds}s "
+            f"({'enabled' if follow_up_ms > 0 else 'disabled — turn-based'})"
         )
         self.websocket_transport = self.websocket_handler.create_transport()
         

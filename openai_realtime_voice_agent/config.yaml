@@ -1,5 +1,5 @@
 name: OpenAI Realtime Voice Agent
-version: "0.4.5"
+version: "0.4.6"
 slug: openai_realtime_voice_agent
 description: Voice control using OpenAI Realtime API with WebSocket support for ESP32 devices
 url: https://github.com/fjfricke/ha-openai-realtime
@@ -90,6 +90,16 @@ options:
   # returns to idle. Bridges the gaps between TTS sentences / tool-calls so the
   # LED ring and the "stop" wake word stay active for the whole answer.
   phase_idle_debounce_ms: 1500
+  # Seconds the device keeps the mic OPEN after the assistant finishes, so you
+  # can answer back WITHOUT re-saying the wake word ("follow-up window"). The
+  # LED ring turns to the listening colour while it waits; if you don't speak
+  # within the window it returns to idle. 0 = off (turn-based: say the wake word
+  # for every turn). The value is sent to the device in the handshake, so you
+  # can tune it here and just restart the add-on — no reflash. The window only
+  # opens ~1.5 s after the reply's audio has fully played out, so the device
+  # doesn't hear the tail of its own speech. Requires firmware that supports it
+  # (va_client follow_up_ms); older firmware ignores it.
+  follow_up_listen_seconds: 8
   # OpenAI instructions. For non-English, lock the language explicitly, e.g.:
   #   "Je bent de Home Assistant spraakassistent en bestuurt het smart home.
   #    Spreek en versta UITSLUITEND Nederlands. Wissel nooit van taal."
@@ -118,6 +128,7 @@ schema:
   transcription_language: str?
   transcription_model: str
   phase_idle_debounce_ms: int(0,10000)
+  follow_up_listen_seconds: int(0,60)
   instructions: str
   session_reuse_timeout_seconds: int(0,3600)  # bis 1 Stunde
   enable_recording: bool

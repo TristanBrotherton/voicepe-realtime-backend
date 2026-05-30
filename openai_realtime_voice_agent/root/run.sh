@@ -23,6 +23,7 @@ INTERRUPT_RESPONSE=$(bashio::config 'interrupt_response')
 TRANSCRIPTION_LANGUAGE=$(bashio::config 'transcription_language')
 TRANSCRIPTION_MODEL=$(bashio::config 'transcription_model')
 PHASE_IDLE_DEBOUNCE_MS=$(bashio::config 'phase_idle_debounce_ms')
+FOLLOW_UP_LISTEN_SECONDS=$(bashio::config 'follow_up_listen_seconds')
 
 # Get instructions
 INSTRUCTIONS=$(bashio::config 'instructions')
@@ -60,6 +61,7 @@ export INTERRUPT_RESPONSE
 export TRANSCRIPTION_LANGUAGE
 export TRANSCRIPTION_MODEL
 export PHASE_IDLE_DEBOUNCE_MS
+export FOLLOW_UP_LISTEN_SECONDS
 
 # Export instructions
 export INSTRUCTIONS
