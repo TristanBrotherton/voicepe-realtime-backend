@@ -159,7 +159,13 @@ class ConnectionRecovery(FrameProcessor):
         await super().process_frame(frame, direction)
         if isinstance(frame, ErrorFrame) and not self._reconnecting:
             msg = str(getattr(frame, "error", "") or "")
-            if any(m in msg for m in self._DEATH_MARKERS):
+            # Only the OpenAI send-side flood ("Error sending client event: …")
+            # means OUR OpenAI WS died. A DEVICE-side disconnect also closes with
+            # 1011/ConnectionClosed but is normal (the device went away) and must
+            # NOT trigger an OpenAI reconnect — so require the client-event
+            # signature in ADDITION to a connection-death marker. Covers both the
+            # 1011 keepalive timeout and the 1001 "going away" 60-minute cap.
+            if "client event" in msg and any(m in msg for m in self._DEATH_MARKERS):
                 now = time.monotonic()
                 if now - self._last_attempt >= self.RECONNECT_COOLDOWN_S:
                     self._reconnecting = True
