@@ -506,7 +506,21 @@ class Application:
                 from pipecat.processors.aggregators.llm_context import LLMContext
                 if self.openai_service is not None and getattr(self.openai_service, "_context", None) is None:
                     self.openai_service._context = LLMContext()
-                    logger.info("🌱 Pre-seeded empty context to consume pipecat's first-context auto-response (silent — no startup speech)")
+                    # Also mark pipecat's one-time "conversation setup" as already
+                    # done. pipecat runs it on the FIRST _create_response: it
+                    # re-sends the context's messages as ConversationItemCreate
+                    # events, then flips _llm_needs_conversation_setup False. On a
+                    # fresh realtime session OpenAI already builds the conversation
+                    # from the live audio + tool-call flow, so that one-time setup
+                    # re-injects items OpenAI already has — which made the first
+                    # post-tool reply come out as a meaningless filler ("Ik ben
+                    # klaar om verder te gaan met het gesprek."). Instructions are
+                    # sent independently via _update_settings() on session.created,
+                    # so clearing this flag is safe and makes the first real turn a
+                    # normal reply.
+                    if hasattr(self.openai_service, "_llm_needs_conversation_setup"):
+                        self.openai_service._llm_needs_conversation_setup = False
+                    logger.info("🌱 Pre-seeded empty context + marked conversation setup done (no startup speech, no first-turn filler)")
                 else:
                     logger.info("🌱 Startup context already set; skipping pre-seed")
             except Exception as e:
