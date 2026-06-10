@@ -2,6 +2,15 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.4.28 (dev channel)
+
+- **"Stop" during the after-reply listening window now actually stops.** The
+  open mic had already streamed the word to OpenAI, which answered it as a
+  question. The bridge now treats the device's stop as authoritative: it
+  discards the in-flight audio and instantly cancels any answer OpenAI
+  started for it. (Pair with the dev firmware update, which also makes the
+  local "stop" detection more sensitive.)
+
 ## 0.4.27 (dev channel)
 
 - **Dev diagnostics:** new `log_level` option (the dev add-on defaults to
