@@ -1,0 +1,224 @@
+# Nederlandse namen + uitleg voor het Configuratie-tabblad. Gebruikers met
+# Home Assistant in het Nederlands zien automatisch deze teksten; anderen de
+# Engelse (en.yaml). Groepen via emoji-prefix — zelfde volgorde als config.yaml.
+configuration:
+  # --- 🔑 Basis ---
+  openai_api_key:
+    name: "🔑 Basis · OpenAI API-sleutel"
+    description: >-
+      Je persoonlijke OpenAI-sleutel (begint met sk-...). Maak er één aan op
+      platform.openai.com → API keys, en zorg dat facturering is ingesteld.
+      Alles wat de assistent doet — luisteren, denken, praten, zoeken op
+      internet — loopt via deze sleutel.
+  instructions:
+    name: "🔑 Basis · Persoonlijkheid (systeemprompt)"
+    description: >-
+      Instructies in gewone taal die de assistent vormen: karakter, taal en
+      huisregels. Schrijf het alsof je een persoon instrueert. Twee tips die
+      er op een spraakapparaat toe doen: leg de taal vast ("Spreek en versta
+      uitsluitend Nederlands. Wissel nooit van taal.") en zeg dat hij zijn
+      gereedschap stil moet gebruiken in plaats van "momentje" te zeggen.
+      BEWERK-TIP: dit veld is hier één regel (een beperking van de Home
+      Assistant-interface) — gebruik voor comfortabel bewerken het ⋮-menu
+      bovenaan dit tabblad → "Bewerken als YAML": dan krijg je een volwaardige
+      teksteditor.
+  transcription_language:
+    name: "🔑 Basis · Spreektaal (bijv. nl, en, de)"
+    description: >-
+      Tweeletterige code van de taal die je tegen het apparaat spreekt. Dit
+      voorkomt dat de assistent naar een andere taal afdwaalt, ÉN schrijft wat
+      jij zei in het add-on-log (de 🗣️-regels — handig om te zien wat hij
+      verstond). Leeg = automatisch detecteren (geen transcript in het log).
+
+  # --- 🗣️ Model & stem ---
+  openai_model:
+    name: "🗣️ Model & stem · Model"
+    description: >-
+      Het OpenAI-model dat luistert en praat. gpt-realtime-2 (standaard) is
+      het nieuwste en slimste. gpt-realtime-mini is merkbaar goedkoper maar
+      minder slim. Wil je een model dat er niet tussen staat? Kies "custom"
+      en zet onderaan deze pagina "Toon ongebruikte optionele
+      configuratie-opties" aan om het custom-veld zichtbaar te maken.
+  openai_model_custom:
+    name: "🗣️ Model & stem · Model (custom)"
+    description: >-
+      Alleen gebruikt als Model op "custom" staat. Elk geldig OpenAI
+      Realtime-model-id. (Standaard verborgen — dit is een expert-optie.)
+  openai_voice:
+    name: "🗣️ Model & stem · Stem"
+    description: >-
+      De stem waarmee hij praat. marin en cedar zijn de nieuwste en klinken
+      het natuurlijkst. Een lopend gesprek houdt zijn stem — herstart de
+      add-on na het wijzigen. Voor een stem die er niet tussen staat: kies
+      "custom" en zet onderaan "Toon ongebruikte optionele
+      configuratie-opties" aan.
+  openai_voice_custom:
+    name: "🗣️ Model & stem · Stem (custom)"
+    description: >-
+      Alleen gebruikt als Stem op "custom" staat. Elke geldige
+      OpenAI-stemnaam. (Standaard verborgen.)
+  openai_speed:
+    name: "🗣️ Model & stem · Spreektempo"
+    description: >-
+      1.0 = normaal. Lager is langzamer en duidelijker (minimaal 0.25), hoger
+      is sneller (maximaal 1.5). Verandert alleen het tempo, niet de woorden.
+  max_output_tokens:
+    name: "🗣️ Model & stem · Maximale antwoordlengte"
+    description: >-
+      Begrenst hoe lang een antwoord mag worden, in tokens (≈ 0,75 woord per
+      stuk). 0 = geen limiet. Zet bijv. 1024 als hij soms blijft doorpraten;
+      te laag kapt antwoorden midden in een zin af.
+
+  # --- 💬 Gesprek ---
+  follow_up_listen_seconds:
+    name: "💬 Gesprek · Naluisteren (seconden)"
+    description: >-
+      Na een antwoord blijft het apparaat zo lang luisteren, zodat je gewoon
+      kunt doorpraten — zonder opnieuw het wake-woord te zeggen. De LED-ring
+      toont ondertussen de luisterkleur. 8 voelt natuurlijk; 0 zet het uit
+      (wake-woord voor elke vraag).
+  follow_up_open_delay_ms:
+    name: "💬 Gesprek · Naluister-vertraging (ms)"
+    description: >-
+      Korte pauze tussen het einde van een antwoord en het heropenen van de
+      microfoon, zodat de laatste echo uit de speaker geen spookvraag kan
+      veroorzaken. 200–300 is een goed bereik. Verhoog als de assistent soms
+      "tegen niemand" lijkt te antwoorden; verlaag voor vlotter doorpraten.
+  vad_eagerness:
+    name: "💬 Gesprek · Beurtwissel-snelheid"
+    description: >-
+      Hoe snel de assistent beslist dat je uitgesproken bent. "low"
+      (standaard) wacht geduldig — het fijnst als je midden in een zin even
+      nadenkt. "high" antwoordt sneller maar kan je afkappen. "auto" laat
+      OpenAI kiezen.
+  phase_idle_debounce_ms:
+    name: "💬 Gesprek · Einde-antwoord-marge (ms)"
+    description: >-
+      Hoe lang de assistent stil moet zijn voordat het apparaat het antwoord
+      als afgerond beschouwt. Dit overbrugt de natuurlijke pauzes tussen
+      zinnen en tijdens smart-home-acties, zodat de LED en het "stop"-woord
+      het hele antwoord blijven werken. 1500 is een goede standaard; verhoog
+      als het apparaat midden in lange antwoorden al op rust springt.
+
+  # --- 🌐 Websearch ---
+  enable_web_search:
+    name: "🌐 Websearch · Zoeken op internet"
+    description: >-
+      Laat de assistent dingen online opzoeken: weer, nieuws, openingstijden,
+      actualiteiten. Elke zoekactie is één extra OpenAI-aanroep op jouw
+      sleutel (een paar cent) en duurt een paar seconden extra. Standaard aan.
+  web_search_model:
+    name: "🌐 Websearch · Zoekmodel"
+    description: >-
+      Het model dat de zoekopdracht uitvoert en het antwoord samenvat.
+      gpt-5.5 (standaard) geeft de beste antwoorden; mini/nano-modellen zijn
+      goedkoper maar missen meer. Voor een ander model: kies "custom" en zet
+      onderaan "Toon ongebruikte optionele configuratie-opties" aan.
+  web_search_model_custom:
+    name: "🌐 Websearch · Zoekmodel (custom)"
+    description: >-
+      Alleen gebruikt als Zoekmodel op "custom" staat. Elk model dat OpenAI's
+      web_search-tool ondersteunt. (Standaard verborgen.)
+
+  # --- 🎚️ Audio ---
+  playback_prebuffer_ms:
+    name: "🎚️ Audio · Afspeelbuffer (ms)"
+    description: >-
+      Hoeveel van het antwoord het apparaat verzamelt voordat het begint af te
+      spelen. Een grotere buffer vangt korte wifi-haperingen op (het
+      incidentele krakje), maar elk antwoord begint zoveel later. 150 is een
+      goede balans; verhoog naar 250–300 bij blijvend kraken, 0 = direct
+      afspelen.
+  noise_reduction:
+    name: "🎚️ Audio · Microfoon-ruisonderdrukking"
+    description: >-
+      Extra filtering van je stem voordat die naar OpenAI gaat. "off" is
+      meestal prima — het apparaat filtert zelf al. Probeer "near_field" als
+      je dichtbij praat, "far_field" voor door de kamer heen, wanneer hij je
+      in een rumoerige omgeving slecht verstaat.
+
+  # --- 🏠 Home Assistant ---
+  ha_mcp_url:
+    name: "🏠 Home Assistant · MCP-server-URL"
+    description: >-
+      Hoe de assistent je huis bestuurt. LEEG laten (aanbevolen): dan gebruikt
+      hij Home Assistants ingebouwde "MCP Server"-integratie — installeer die
+      integratie en stel je entiteiten beschikbaar aan Assist. Vul alleen een
+      URL in als je de losse ha-mcp-add-on gebruikt.
+  longlived_token:
+    name: "🏠 Home Assistant · Toegangstoken"
+    description: >-
+      Leeg laten (aanbevolen): de add-on gebruikt zijn eigen ingebouwde
+      toestemming. Maak alleen een long-lived token aan (je HA-profiel →
+      Beveiliging) als het log bij het opstarten een 401/403-fout toont.
+  mcp_tool_allowlist:
+    name: "🏠 Home Assistant · Tool-allowlist"
+    description: >-
+      Kommagescheiden lijst van besturingstools die de assistent mag
+      gebruiken; leeg = allemaal. Met de ingebouwde MCP-server kun je dit
+      leeg laten. Vooral nuttig met de ha-mcp-add-on (80+ tools) om gesprekken
+      snel en goedkoop te houden.
+
+  # --- ⚙️ Geavanceerd ---
+  websocket_port:
+    name: "⚙️ Geavanceerd · Apparaat-poort"
+    description: >-
+      De poort waarop de Voice PE verbindt. Moet overeenkomen met de va_url in
+      de apparaat-firmware (stable 8080, dev 8081). Alleen wijzigen bij een
+      poortconflict — en pas dan ook de firmware-stub aan.
+  session_reuse_timeout_seconds:
+    name: "⚙️ Geavanceerd · Gesprek hervatten binnen (seconden)"
+    description: >-
+      Verbindt het apparaat binnen dit aantal seconden opnieuw (wifi-hapering,
+      add-on-herstart), dan gaat het gesprek verder waar het was. 300 (5 min)
+      is een goede standaard; 0 = altijd opnieuw beginnen.
+  max_context_messages:
+    name: "⚙️ Geavanceerd · Gespreksgeheugen (berichten)"
+    description: >-
+      Hoeveel recente uitwisselingen de assistent binnen een gesprek onthoudt.
+      Meer = beter geheugen, maar elk antwoord rekent de hele historie opnieuw
+      af, dus lange gesprekken worden duurder en kunnen tegen OpenAI-limieten
+      aanlopen. 12 is een goede balans; 0 = onbeperkt.
+  transcription_model:
+    name: "⚙️ Geavanceerd · Transcriptmodel"
+    description: >-
+      Alleen gebruikt als bij Basis een spreektaal is ingesteld. Dit model
+      schrijft jouw spraak als tekst in het log — het beïnvloedt NIET hoe de
+      assistent je verstaat (die hoort je echte stem). gpt-4o-transcribe
+      (standaard) is het nauwkeurigst. Voor een ander model: kies "custom" en
+      zet onderaan "Toon ongebruikte optionele configuratie-opties" aan.
+  transcription_model_custom:
+    name: "⚙️ Geavanceerd · Transcriptmodel (custom)"
+    description: >-
+      Alleen gebruikt als Transcriptmodel op "custom" staat. (Standaard
+      verborgen.)
+  turn_detection_type:
+    name: "⚙️ Geavanceerd · Beurtdetectie (legacy)"
+    description: >-
+      Hoe het einde van je vraag wordt herkend. Normaal NIET instellen: de
+      assistent begrijpt dan zelf wanneer je zin af is (semantic_vad).
+      "server_vad" is de oude stiltetimer-methode, afgesteld met de drie
+      velden hieronder — alleen bewaard als noodluik.
+  vad_threshold:
+    name: "⚙️ Geavanceerd · server_vad: geluidsdrempel"
+    description: >-
+      Alleen bij server_vad. Hoe hard iets moet klinken om als spraak te
+      tellen (0–1, standaard 0.5). Hoger = minder valse triggers door
+      achtergrondgeluid.
+  vad_prefix_padding_ms:
+    name: "⚙️ Geavanceerd · server_vad: aanloop (ms)"
+    description: >-
+      Alleen bij server_vad. Audio van vlak vóór de spraakdetectie die wordt
+      meegenomen, zodat je eerste woord niet wegvalt (standaard 300).
+  vad_silence_duration_ms:
+    name: "⚙️ Geavanceerd · server_vad: stilte = einde vraag (ms)"
+    description: >-
+      Alleen bij server_vad. Hoe lang een stilte je vraag beëindigt
+      (standaard 800). Verhoog als je wordt afgekapt bij een pauze.
+
+  # --- 🔍 Debug ---
+  enable_recording:
+    name: "🔍 Debug · Audio opnemen"
+    description: >-
+      Slaat microfoon- en speakeraudio op in bestanden binnen de add-on,
+      alleen voor probleemanalyse. Normaal uit laten.

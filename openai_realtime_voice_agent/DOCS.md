@@ -60,28 +60,29 @@ blank to expose all, or trim to just what you use, e.g.:
 
 ## 4. Recommended starting settings
 
-These mirror a known-good working configuration. Every option also has inline help
-on the Configuration tab.
+**The defaults are the recommended settings** — for a first run you only need the
+API key, the MCP integration (section 3), and ideally your language. The
+Configuration tab is grouped: **🔑 Basics → 🗣️ Model & voice → 💬 Conversation →
+🌐 Web search → 🎚️ Audio → 🏠 Home Assistant → ⚙️ Advanced → 🔍 Debug**, and every
+option has plain-language inline help.
 
-| Option | Value | Note |
+| Option | Default | Note |
 |---|---|---|
 | `openai_model` | `gpt-realtime-2` | newest speech-to-speech model |
 | `openai_voice` | `marin` | `marin`/`cedar` are the newest voices |
-| `openai_speed` | `1.0` | playback speed (0.25–1.5) |
-| `max_output_tokens` | `0` | 0 = unlimited; set e.g. 1024 to cap long replies |
-| `noise_reduction` | `off` | try `near_field` if the VAD misfires |
-| `turn_detection_type` | `semantic_vad` | natural end-of-turn, echo-resistant |
-| `vad_eagerness` | `low` | waits longest before ending your turn |
-| `interrupt_response` | `false` | hands-free barge-in (leave off on Voice PE) |
-| `transcription_language` | *(blank)* | set your ISO code (e.g. `nl`) to log the user transcript |
-| `transcription_model` | `gpt-4o-transcribe` | side-channel transcript only |
-| `follow_up_listen_seconds` | `8` | mic stays open this long to answer back |
-| `follow_up_open_delay_ms` | `0` | raise to ~200 if the device hears its own tail |
-| `playback_prebuffer_ms` | `0` | raise to ~150 if you hear crackle |
-| `max_context_messages` | `12` | bounds per-turn token cost |
-| `enable_web_search` | `true` | online lookups on by default; set `false` to disable |
-| `web_search_model` | `gpt-5.5` | best-quality search model; mini/nano are cheaper |
+| `transcription_language` | *(blank)* | set your ISO code (e.g. `nl`): locks the language + logs the user transcript |
 | `instructions` | *(English default)* | the system prompt; swap the LANGUAGE line for your language |
+| `follow_up_listen_seconds` | `8` | mic stays open this long so you can answer back |
+| `follow_up_open_delay_ms` | `200` | echo guard before the follow-up mic opens; 0 = snappiest |
+| `vad_eagerness` | `low` | waits longest before deciding you're done talking |
+| `playback_prebuffer_ms` | `150` | raise to ~250 if you hear crackle; 0 = play immediately |
+| `max_context_messages` | `12` | bounds per-turn token cost |
+| `enable_web_search` | `true` | online lookups; set `false` to disable |
+| `web_search_model` | `gpt-5.5` | best-quality search model; mini/nano are cheaper |
+
+The legacy `server_vad` turn-detection fields live at the bottom of ⚙️ Advanced and
+only appear when you enable **"Show unused optional configuration options"** —
+leave them unset unless you have a specific reason.
 
 ## 5. Web search
 
@@ -107,10 +108,10 @@ Every option has a description on the **Configuration** tab. The ones worth know
 - **`transcription_language`** turns the side-channel transcript on. With it set you
   get `🗣️ user: …` lines in the add-on log (handy for debugging); it does **not**
   change what the model understands — the main model hears your audio natively.
-- **`follow_up_open_delay_ms` / `playback_prebuffer_ms`** default to `0` (snappy).
-  If, after a reply, the device sometimes triggers on its own tail, raise the open
-  delay to ~200 ms. If you hear an occasional crackle at the start of replies, raise
-  the prebuffer to ~150 ms.
+- **`follow_up_open_delay_ms` / `playback_prebuffer_ms`** default to `200` / `150`
+  — a small echo guard and jitter cushion. Set them to `0` for the snappiest
+  feel; raise them if the device "answers nobody" after a reply (open delay) or
+  you hear crackle at the start of replies (prebuffer).
 
 ## 7. Reading the logs
 

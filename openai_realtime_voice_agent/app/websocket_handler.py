@@ -465,7 +465,34 @@ class WebSocketHandler:
         # already-buffered output to the device, which the device discards —
         # minor wasted bandwidth, tracked as roadmap #3; no extra tokens because
         # response.cancel stops further generation.)
+        # FOLLOW-UP-WINDOW STOP (the "stop heard as a question" bug). During the
+        # post-reply follow-up window the device mic is OPEN and streaming, so by
+        # the time the device's local wake-word detects "stop" and sends us the
+        # interrupt, the stop word's audio is ALREADY in OpenAI's input buffer.
+        # Left alone, the server VAD commits it as a user turn and — with
+        # create_response=true — the model literally ANSWERS the word "stop"
+        # ("Ik hou me stil…"). The device's local detection must therefore be
+        # authoritative on the cloud side too, in two layers:
+        #   1) input_audio_buffer.clear discards the not-yet-committed stop-word
+        #      audio (the device closed its own mic gate in the same instant),
+        #      so in the common case no turn is created at all;
+        #   2) if the server VAD committed BEFORE our clear landed (tight race),
+        #      OpenAI creates a response moments later anyway — so any assistant
+        #      conversation item that appears within INTERRUPT_KILL_WINDOW_S of
+        #      a device interrupt is cancelled on arrival (handler below). A
+        #      legitimate next turn cannot fall inside that window: after a stop
+        #      the mic is closed, and a fresh wake-word turn needs the chime +
+        #      speech + VAD end-of-turn (> 2 s) before a response is created.
+        _interrupt_kill_until = {"t": 0.0}
+        INTERRUPT_KILL_WINDOW_S = 1.5
+
         async def _on_device_interrupt():
+            _interrupt_kill_until["t"] = time.monotonic() + INTERRUPT_KILL_WINDOW_S
+            try:
+                await openai_service.send_client_event(openai_rt_events.InputAudioBufferClearEvent())
+                logger.info("🛑 device interrupt → input_audio_buffer.clear sent (drop in-flight user audio)")
+            except Exception as e:
+                logger.info(f"🛑 device interrupt → input_audio_buffer.clear no-op ({e!r})")
             try:
                 if getattr(openai_service, "_current_assistant_response", None) is not None:
                     await openai_service.send_client_event(openai_rt_events.ResponseCancelEvent())
@@ -474,6 +501,24 @@ class WebSocketHandler:
                     logger.info("🛑 device interrupt → no active response to cancel (device already silenced)")
             except Exception as e:
                 logger.info(f"🛑 device interrupt → response.cancel no-op ({e!r})")
+
+        @openai_service.event_handler("on_conversation_item_created")
+        async def _kill_racing_response(service, item_id, item):
+            # Pipecat fires this for every conversation.item.added; only an
+            # ASSISTANT item right after a device interrupt is the racing
+            # response to the stop word the user just cancelled.
+            if getattr(item, "role", None) != "assistant":
+                return
+            if time.monotonic() >= _interrupt_kill_until["t"]:
+                return
+            try:
+                await openai_service.send_client_event(openai_rt_events.ResponseCancelEvent())
+                logger.info(
+                    "🛑 response raced in right after a device interrupt "
+                    "(OpenAI heard the stop word as a turn) → response.cancel"
+                )
+            except Exception as e:
+                logger.info(f"🛑 post-interrupt racing-response cancel no-op ({e!r})")
 
         if self._serializer is not None:
             self._serializer.set_interrupt_handler(_on_device_interrupt)

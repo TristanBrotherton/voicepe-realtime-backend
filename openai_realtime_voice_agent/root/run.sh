@@ -1,51 +1,43 @@
 #!/usr/bin/with-contenv bashio
 set -e
 
-# Get configuration
+# --- 🔑 Basics ---
 OPENAI_API_KEY=$(bashio::config 'openai_api_key')
+INSTRUCTIONS=$(bashio::config 'instructions')
+TRANSCRIPTION_LANGUAGE=$(bashio::config 'transcription_language')
+
+# --- 🗣️ Model & voice ---
 OPENAI_MODEL=$(bashio::config 'openai_model')
-OPENAI_MODEL_CUSTOM=$(bashio::config 'openai_model_custom')
 OPENAI_VOICE=$(bashio::config 'openai_voice')
-OPENAI_VOICE_CUSTOM=$(bashio::config 'openai_voice_custom')
 OPENAI_SPEED=$(bashio::config 'openai_speed')
 MAX_OUTPUT_TOKENS=$(bashio::config 'max_output_tokens')
+
+# --- 💬 Conversation ---
+FOLLOW_UP_LISTEN_SECONDS=$(bashio::config 'follow_up_listen_seconds')
+FOLLOW_UP_OPEN_DELAY_MS=$(bashio::config 'follow_up_open_delay_ms')
+VAD_EAGERNESS=$(bashio::config 'vad_eagerness')
+PHASE_IDLE_DEBOUNCE_MS=$(bashio::config 'phase_idle_debounce_ms')
+
+# --- 🌐 Web search ---
+ENABLE_WEB_SEARCH=$(bashio::config 'enable_web_search')
+WEB_SEARCH_MODEL=$(bashio::config 'web_search_model')
+
+# --- 🎚️ Audio ---
+PLAYBACK_PREBUFFER_MS=$(bashio::config 'playback_prebuffer_ms')
 NOISE_REDUCTION=$(bashio::config 'noise_reduction')
-WEBSOCKET_PORT=$(bashio::config 'websocket_port')
-DEVICE_INPUT_SAMPLE_RATE=$(bashio::config 'device_input_sample_rate')
+
+# --- 🏠 Home Assistant ---
 HA_MCP_URL=$(bashio::config 'ha_mcp_url')
 LONGLIVED_TOKEN=$(bashio::config 'longlived_token')
 MCP_TOOL_ALLOWLIST=$(bashio::config 'mcp_tool_allowlist')
 
-# Get turn detection settings
-VAD_THRESHOLD=$(bashio::config 'vad_threshold')
-VAD_PREFIX_PADDING_MS=$(bashio::config 'vad_prefix_padding_ms')
-VAD_SILENCE_DURATION_MS=$(bashio::config 'vad_silence_duration_ms')
-TURN_DETECTION_TYPE=$(bashio::config 'turn_detection_type')
-VAD_EAGERNESS=$(bashio::config 'vad_eagerness')
-SEMANTIC_VAD_CREATE_RESPONSE=$(bashio::config 'semantic_vad_create_response')
-ENABLE_DISCONNECT_TOOL=$(bashio::config 'enable_disconnect_tool')
-INTERRUPT_RESPONSE=$(bashio::config 'interrupt_response')
-TRANSCRIPTION_LANGUAGE=$(bashio::config 'transcription_language')
-TRANSCRIPTION_MODEL=$(bashio::config 'transcription_model')
-TRANSCRIPTION_MODEL_CUSTOM=$(bashio::config 'transcription_model_custom')
-PHASE_IDLE_DEBOUNCE_MS=$(bashio::config 'phase_idle_debounce_ms')
-FOLLOW_UP_LISTEN_SECONDS=$(bashio::config 'follow_up_listen_seconds')
-FOLLOW_UP_OPEN_DELAY_MS=$(bashio::config 'follow_up_open_delay_ms')
-PLAYBACK_PREBUFFER_MS=$(bashio::config 'playback_prebuffer_ms')
-
-# Get instructions
-INSTRUCTIONS=$(bashio::config 'instructions')
-
-# Get session management settings
+# --- ⚙️ Advanced ---
+WEBSOCKET_PORT=$(bashio::config 'websocket_port')
 SESSION_REUSE_TIMEOUT_SECONDS=$(bashio::config 'session_reuse_timeout_seconds')
 MAX_CONTEXT_MESSAGES=$(bashio::config 'max_context_messages')
+TRANSCRIPTION_MODEL=$(bashio::config 'transcription_model')
 
-# Get web search settings
-ENABLE_WEB_SEARCH=$(bashio::config 'enable_web_search')
-WEB_SEARCH_MODEL=$(bashio::config 'web_search_model')
-WEB_SEARCH_MODEL_CUSTOM=$(bashio::config 'web_search_model_custom')
-
-# Get audio recording setting
+# --- 🔍 Debug ---
 ENABLE_RECORDING=$(bashio::config 'enable_recording')
 
 # Validate required configuration
@@ -56,49 +48,74 @@ fi
 
 # Export environment variables
 export OPENAI_API_KEY
+export INSTRUCTIONS
+export TRANSCRIPTION_LANGUAGE
 export OPENAI_MODEL
-export OPENAI_MODEL_CUSTOM
 export OPENAI_VOICE
-export OPENAI_VOICE_CUSTOM
 export OPENAI_SPEED
 export MAX_OUTPUT_TOKENS
-export NOISE_REDUCTION
-export WEBSOCKET_PORT
-export DEVICE_INPUT_SAMPLE_RATE
-export LONGLIVED_TOKEN
-export MCP_TOOL_ALLOWLIST
-
-# Export turn detection settings
-export VAD_THRESHOLD
-export VAD_PREFIX_PADDING_MS
-export VAD_SILENCE_DURATION_MS
-export TURN_DETECTION_TYPE
-export VAD_EAGERNESS
-export SEMANTIC_VAD_CREATE_RESPONSE
-export ENABLE_DISCONNECT_TOOL
-export INTERRUPT_RESPONSE
-export TRANSCRIPTION_LANGUAGE
-export TRANSCRIPTION_MODEL
-export TRANSCRIPTION_MODEL_CUSTOM
-export PHASE_IDLE_DEBOUNCE_MS
 export FOLLOW_UP_LISTEN_SECONDS
 export FOLLOW_UP_OPEN_DELAY_MS
-export PLAYBACK_PREBUFFER_MS
-
-# Export instructions
-export INSTRUCTIONS
-
-# Export session management settings
-export SESSION_REUSE_TIMEOUT_SECONDS
-export MAX_CONTEXT_MESSAGES
-
-# Export web search settings
+export VAD_EAGERNESS
+export PHASE_IDLE_DEBOUNCE_MS
 export ENABLE_WEB_SEARCH
 export WEB_SEARCH_MODEL
-export WEB_SEARCH_MODEL_CUSTOM
-
-# Export audio recording setting
+export PLAYBACK_PREBUFFER_MS
+export NOISE_REDUCTION
+export LONGLIVED_TOKEN
+export MCP_TOOL_ALLOWLIST
+export WEBSOCKET_PORT
+export SESSION_REUSE_TIMEOUT_SECONDS
+export MAX_CONTEXT_MESSAGES
+export TRANSCRIPTION_MODEL
 export ENABLE_RECORDING
+
+# The *_custom escape hatches (🗣️/🌐/⚙️) are optional WITHOUT defaults —
+# bashio::config prints "null" for unset optionals, and main.py's
+# _resolve_choice would treat that literal string as a real custom value.
+# Only export when actually set.
+if bashio::config.has_value 'openai_model_custom'; then
+    OPENAI_MODEL_CUSTOM=$(bashio::config 'openai_model_custom')
+    export OPENAI_MODEL_CUSTOM
+fi
+if bashio::config.has_value 'openai_voice_custom'; then
+    OPENAI_VOICE_CUSTOM=$(bashio::config 'openai_voice_custom')
+    export OPENAI_VOICE_CUSTOM
+fi
+if bashio::config.has_value 'web_search_model_custom'; then
+    WEB_SEARCH_MODEL_CUSTOM=$(bashio::config 'web_search_model_custom')
+    export WEB_SEARCH_MODEL_CUSTOM
+fi
+if bashio::config.has_value 'transcription_model_custom'; then
+    TRANSCRIPTION_MODEL_CUSTOM=$(bashio::config 'transcription_model_custom')
+    export TRANSCRIPTION_MODEL_CUSTOM
+fi
+
+# Legacy server_vad escape hatch (⚙️ Advanced, optional WITHOUT defaults).
+# bashio::config prints the string "null" for unset optional keys, which would
+# crash main.py's float()/int() parsing — so only export when actually set.
+# Unset = main.py's hardwired defaults (semantic_vad; 0.5/300/800 if server_vad
+# is ever selected).
+if bashio::config.has_value 'turn_detection_type'; then
+    TURN_DETECTION_TYPE=$(bashio::config 'turn_detection_type')
+    export TURN_DETECTION_TYPE
+fi
+if bashio::config.has_value 'vad_threshold'; then
+    VAD_THRESHOLD=$(bashio::config 'vad_threshold')
+    export VAD_THRESHOLD
+fi
+if bashio::config.has_value 'vad_prefix_padding_ms'; then
+    VAD_PREFIX_PADDING_MS=$(bashio::config 'vad_prefix_padding_ms')
+    export VAD_PREFIX_PADDING_MS
+fi
+if bashio::config.has_value 'vad_silence_duration_ms'; then
+    VAD_SILENCE_DURATION_MS=$(bashio::config 'vad_silence_duration_ms')
+    export VAD_SILENCE_DURATION_MS
+fi
+
+# Removed options (v0.4.29) — no longer exported; main.py env defaults take
+# over: SEMANTIC_VAD_CREATE_RESPONSE=true, ENABLE_DISCONNECT_TOOL=false,
+# INTERRUPT_RESPONSE=false, DEVICE_INPUT_SAMPLE_RATE=16000.
 
 # Export HA_MCP_URL if set (empty string means use default in main.py)
 if [ -n "$HA_MCP_URL" ]; then
@@ -110,4 +127,3 @@ fi
 # Start the application
 export PYTHONUNBUFFERED=1
 exec python3 -m app.main
-

@@ -107,6 +107,49 @@ class SafeRealtimeLLMService(OpenAIRealtimeLLMService):
         except Exception as e:  # pragma: no cover - defensive
             logger.warning(f"⚠️ could not clear post-reconnect response flags: {e!r}")
 
+    # Error codes that must NOT kill the realtime session. pipecat 0.0.97's
+    # _receive_task_handler does `_handle_evt_error(evt); return` on EVERY
+    # error event — the reader task dies, the in-flight reply cuts off
+    # mid-sentence and the session is deaf until the next connection death.
+    # Observed live (2026-06-10): semantic_vad split one utterance into two
+    # turns, the server's auto-created second response collided with the
+    # first → conversation_already_has_active_response → the playing reply
+    # stopped at 4.4 s and the session wedged. These codes are harmless
+    # protocol races; the right move is to keep reading.
+    BENIGN_ERROR_CODES = {
+        # The server auto-created a response while one was still active
+        # (VAD split a sentence into two turns). The active response keeps
+        # streaming — nothing is broken.
+        "conversation_already_has_active_response",
+        # response.cancel landed after the response already finished (device
+        # "stop" / the post-interrupt racing-response kill) — nothing to
+        # cancel, nothing broken.
+        "response_cancel_not_active",
+        # input_audio_buffer.commit raced our input_audio_buffer.clear (device
+        # "stop"): an empty commit is exactly the outcome we wanted.
+        "input_audio_buffer_commit_empty",
+    }
+
+    async def _maybe_handle_evt_retrieve_conversation_item_error(self, evt):  # type: ignore[override]
+        """Generic benign-error filter, hooked into pipecat's receive loop.
+
+        pipecat's `_receive_task_handler` treats a True return from this
+        method as "error handled — keep the receive loop alive"; every other
+        error event kills the reader task (`_handle_evt_error` + `return`).
+        It is the ONLY surviving path, so besides the original retrieve-item
+        case (super()), we declare our benign protocol races handled here
+        instead of letting them cut off live audio and wedge the session.
+        """
+        if await super()._maybe_handle_evt_retrieve_conversation_item_error(evt):
+            return True
+        code = getattr(getattr(evt, "error", None), "code", None)
+        if code in self.BENIGN_ERROR_CODES:
+            logger.warning(
+                f"⚠️ benign realtime error ignored (session stays alive): {code}"
+            )
+            return True
+        return False
+
 
 class Application:
     """Main application class using Pipecat."""

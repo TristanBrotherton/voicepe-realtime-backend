@@ -2,6 +2,63 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.5.0
+
+A big stable release: everything built and tested on the dev channel over the
+past days. **Also update the Voice PE firmware** (v1.1.0 — one click in ESPHome
+Builder) to get the full effect of the "stop" improvements; the two halves
+work best together.
+
+- **"Stop" now works through the whole reply AND the after-reply listening
+  window.** The device detects the word more reliably, and the bridge treats
+  it as authoritative: in-flight audio is discarded and an answer OpenAI had
+  already started for the stop word itself is cancelled on arrival — no more
+  "Okay, I'll be quiet" replies to your "stop".
+- **Fixed: an answer could cut off mid-sentence, after which the assistant
+  went deaf** until the next reconnect. Harmless protocol races (e.g. your
+  sentence being split into two turns by a pause) no longer kill the session.
+- **Fixed an audio race that could inject noise/hiss into replies** (firmware,
+  paired with this release).
+- **Mute behaves properly now** (firmware): the ring goes dark with red
+  markers by the microphones, and muting also ends an open listening window
+  immediately — both from Home Assistant and with the physical side switch.
+- **The LED Ring switch in Home Assistant works again** (firmware): entity off
+  = device dark at rest; entity on = the gentle "ready" pulse.
+- **Completely reworked Configuration tab**: options grouped logically
+  (Basics → Model & voice → Conversation → Web search → Audio →
+  Home Assistant → Advanced), every description rewritten in plain practical
+  language, and a full Dutch translation included (shown automatically when
+  your HA is set to Dutch). Confusing or broken switches were removed; rarely
+  needed expert fields stay hidden until you need them.
+- **The add-on now has its own icon.**
+- Friendlier defaults for new installs: follow-up mic delay 200 ms and
+  playback buffer 150 ms. **Existing installs keep their saved values** — if
+  yours still say 0, consider setting 200/150 manually (Conversation / Audio
+  groups) for fewer ghost triggers and less crackle.
+
+### Heads-up: the firmware stub template was improved
+
+The per-device stub in ESPHome Builder used to reference the firmware in a
+form that lets ESPHome **cache the downloaded YAML for a day** — clicking
+Update shortly after a release could then silently rebuild yesterday's code.
+The stub templates in the firmware repo are fixed; existing users can apply
+the same fix once by replacing **only the `packages:` block** in their
+device's YAML in ESPHome Builder (everything else — your name, secrets,
+`dashboard_import` — stays exactly the same):
+
+```yaml
+packages:
+  realtime:
+    url: https://github.com/xandervanerven/home-assistant-voice-pe
+    ref: main
+    files: [home-assistant-voice.realtime.yaml]
+    refresh: 0s
+```
+
+Current templates for reference:
+[esphome-builder.dhcp.yaml](https://github.com/xandervanerven/home-assistant-voice-pe/blob/main/esphome-builder.dhcp.yaml) ·
+[esphome-builder.static-ip.yaml](https://github.com/xandervanerven/home-assistant-voice-pe/blob/main/esphome-builder.static-ip.yaml)
+
 ## 0.4.26
 
 - **Web search is now ON by default**, using **gpt-5.5** (the best-quality search
