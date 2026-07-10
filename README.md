@@ -1,6 +1,12 @@
-<p align="center">
-  <img src="openai_realtime_voice_agent/icon.png" alt="OpenAI Realtime 2 Voice Agent — a stylised Voice PE" width="160"/>
-</p>
+# Voice PE Realtime — backend add-on
+
+**An OpenAI Realtime voice assistant platform for the Home Assistant Voice PE**:
+speech-to-speech with native HA control, speaker awareness (sir/ma'am, per-voice
+tool gating), and on-device guided voice enrollment for training custom wake
+words and (roadmap) per-person voice-print identity. Pairs with the
+[Voice PE Realtime firmware](https://github.com/TristanBrotherton/home-assistant-voice-pe).
+Originally derived from upstream work credited below; now developed independently here.
+
 
 # OpenAI Realtime 2 Voice Agent (Home Assistant Voice PE) (TristanBrotherton fork)
 

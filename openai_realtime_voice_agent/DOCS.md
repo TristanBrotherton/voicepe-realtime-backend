@@ -158,3 +158,25 @@ from-scratch guide (flashing + adopting the device in ESPHome Builder).
 - Firmware thin-client design based on **[maxmaxme/home-assistant-voice-pe](https://github.com/maxmaxme/home-assistant-voice-pe)**, a fork of **[esphome/home-assistant-voice-pe](https://github.com/esphome/home-assistant-voice-pe)** (Nabu Casa / ESPHome).
 - Inspiration from **[marcinnowak79/home-assistant-voice-pe](https://github.com/marcinnowak79/home-assistant-voice-pe)** (gemini-live-proxy).
 - Built on **[pipecat-ai](https://github.com/pipecat-ai/pipecat)**, the **OpenAI Realtime API**, and the official **[Home Assistant MCP Server](https://www.home-assistant.io/integrations/mcp_server/)** integration.
+
+
+## Speaker awareness
+
+Set `speaker_male_name` / `speaker_female_name` and each wake is tagged with the
+likely speaker (pitch heuristic for a one-male-one-female household). The
+assistant can address people by name or sir/ma'am, and `male_only_tools`
+(comma-separated tool names) are enforced below the model — a gated tool
+politely refuses unless the male voice was identified. Convenience, not
+biometric security. Leave names empty to disable.
+
+## Voice enrollment (guided, on-device)
+
+Say "teach me my voice" (any similar phrasing). The paired firmware pins the
+mic open (wake/stop detection disarmed, cyan breathing LED, 10-minute cap, top
+button aborts) while an automated audio coach guides 25 varied repetitions of
+`enrollment_phrase` plus 90 seconds of natural speech. The recording is written
+to `/share/voice-enrollment/<name>_<timestamp>.wav` (16 kHz mono PCM) and never
+leaves your machine — OpenAI hears nothing during enrollment. Use the
+recordings to train a custom microWakeWord model on real household voices (see
+the firmware repo) and, in future, per-person voice-print identification.
+Options: `enrollment_phrase`, `enrollment_tts_voice` (any /v1/audio/speech voice).
