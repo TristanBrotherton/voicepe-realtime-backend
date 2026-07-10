@@ -332,7 +332,7 @@ class EnrollmentConductor:
                 if rep in styles:
                     await self._say(styles[rep])
                     await asyncio.sleep(0.6)
-                await self._say("Next.")
+                await self._say("Next, please.")
                 await asyncio.sleep(self.REP_GAP_S)
             await self._say(
                 "Well done. Now talk normally for about ninety seconds. "
