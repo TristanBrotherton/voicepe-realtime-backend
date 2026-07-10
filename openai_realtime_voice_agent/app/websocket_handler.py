@@ -383,6 +383,7 @@ class WebSocketHandler:
         # Voice enrollment recorder (fork): set by main.py; the serializer feeds
         # it every inbound mic frame while an enrollment session is active.
         self.enrollment_recorder = None
+        self.enrollment_conductor = None
     
     def create_transport(self) -> WebsocketServerTransport:
         """
@@ -743,6 +744,10 @@ class WebSocketHandler:
 
             if self.enrollment_recorder is not None:
                 self._serializer.set_enrollment_recorder(self.enrollment_recorder)
+            if self.enrollment_conductor is not None:
+                async def _on_device_enroll_stopped():
+                    await self.enrollment_conductor.stop()
+                self._serializer.set_enroll_stopped_handler(_on_device_enroll_stopped)
 
         return pipeline, runner, task
     
@@ -788,6 +793,18 @@ class WebSocketHandler:
         """Send a JSON object to every connected device as a TEXT frame."""
         for ws in list(self._websockets):
             await self._send_json(ws, obj)
+
+    async def broadcast_bytes(self, data: bytes) -> None:
+        """Send raw binary (24 kHz mono PCM16 audio) to every connected device.
+
+        The device treats every BINARY frame as reply audio, so this pushes
+        sound to the speaker outside any OpenAI response — used by the
+        enrollment conductor's guidance prompts."""
+        for ws in list(self._websockets):
+            try:
+                await ws.send(data)
+            except Exception as e:
+                logger.warning(f"⚠️ broadcast_bytes failed: {e!r}")
 
     async def broadcast_phase(self, value: str) -> None:
         """Send a va_client phase message to every connected device."""

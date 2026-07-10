@@ -5,6 +5,8 @@ set -e
 OPENAI_API_KEY=$(bashio::config 'openai_api_key')
 SPEAKER_MALE_NAME=$(bashio::config 'speaker_male_name')
 WAKE_SOUND_ENTITY=$(bashio::config 'wake_sound_entity')
+ENROLLMENT_PHRASE=$(bashio::config 'enrollment_phrase')
+ENROLLMENT_TTS_VOICE=$(bashio::config 'enrollment_tts_voice')
 SPEAKER_FEMALE_NAME=$(bashio::config 'speaker_female_name')
 MALE_ONLY_TOOLS=$(bashio::config 'male_only_tools')
 INSTRUCTIONS=$(bashio::config 'instructions')
@@ -55,6 +57,8 @@ fi
 export OPENAI_API_KEY
 export SPEAKER_MALE_NAME
 export WAKE_SOUND_ENTITY
+export ENROLLMENT_PHRASE
+export ENROLLMENT_TTS_VOICE
 export SPEAKER_FEMALE_NAME
 export MALE_ONLY_TOOLS
 export INSTRUCTIONS

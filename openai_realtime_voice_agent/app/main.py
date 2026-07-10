@@ -20,6 +20,7 @@ from app.websocket_handler import WebSocketHandler
 from app.speaker_context import SpeakerProbe
 from app.enrollment import (
     EnrollmentRecorder,
+    EnrollmentConductor,
     get_enrollment_tool_definition,
     create_enrollment_tool_handler,
 )
@@ -480,6 +481,15 @@ class Application:
         # Voice enrollment (fork): guided on-device voice capture, always available.
         self.enrollment_recorder = EnrollmentRecorder()
         self.websocket_handler.enrollment_recorder = self.enrollment_recorder
+        self.enrollment_conductor = EnrollmentConductor(
+            self.enrollment_recorder,
+            self.websocket_handler.broadcast_json,
+            self.websocket_handler.broadcast_bytes,
+            openai_api_key,
+            phrase=os.environ.get("ENROLLMENT_PHRASE", "").strip(),
+            tts_voice=os.environ.get("ENROLLMENT_TTS_VOICE", "fable").strip() or "fable",
+        )
+        self.websocket_handler.enrollment_conductor = self.enrollment_conductor
 
         self.websocket_transport = self.websocket_handler.create_transport()
         
@@ -748,7 +758,7 @@ class Application:
 
             self.openai_service.register_function(
                 "voice_enrollment",
-                create_enrollment_tool_handler(self.enrollment_recorder, _current_speaker_name),
+                create_enrollment_tool_handler(self.enrollment_conductor, _current_speaker_name),
             )
             logger.info("✅ Registered voice_enrollment tool handler")
 

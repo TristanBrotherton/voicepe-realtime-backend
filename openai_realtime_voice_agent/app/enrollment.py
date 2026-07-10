@@ -120,31 +120,6 @@ class EnrollmentRecorder:
         return info
 
 
-ENROLLMENT_SCRIPT = (
-    "Recording is ON — everything the microphone hears is being captured. You are "
-    "guiding {person} through voice training. This is a CALL-AND-RESPONSE drill and "
-    "your discipline matters more than theirs: after EVERY utterance they make "
-    "during the drill, you reply with EXACTLY ONE WORD — 'next' — nothing else, no "
-    "commentary, no counting aloud, no encouragement, no 'I'm waiting'. The one "
-    "exception: when it is time to switch style, use one SHORT phrase (five words "
-    "or fewer) to announce it, then back to one-word replies. "
-    "Open the session with this, briskly: the wake chime is off; each time you say "
-    "'next', they say 'hey leonard' once; if the ring flashes red or it stops "
-    "listening, that is harmless — say 'hey leonard' to silently re-wake and carry "
-    "on. Then run the drill, counting their utterances silently: "
-    "reps 1-8 normal; announce 'Now quickly.' then reps 9-13 fast and casual; "
-    "announce 'Now lazily.' then reps 14-18 quiet or mumbled; announce 'From "
-    "across the room now.' then reps 19-24 louder from a distance; announce 'Last "
-    "one, any way you like.' for rep 25. "
-    "If an utterance was garbled or empty, 'again' instead of 'next'. "
-    "After rep 25, ask them to talk normally for about NINETY seconds — describe "
-    "their day, read something, ramble; if they stop early say only 'go on'. "
-    "When the ninety seconds are done, call voice_enrollment with action 'stop', "
-    "and ONLY AFTER the tool confirms, thank them briefly and suggest — once, "
-    "lightly — a second session in another room. If the session drops they can "
-    "wake you and say 'continue voice training' — start a fresh session; all takes "
-    "count. Never chat, never explain the technology."
-)
 
 
 def get_enrollment_tool_definition() -> Dict[str, Any]:
@@ -186,7 +161,7 @@ def get_enrollment_tool_definition() -> Dict[str, Any]:
 
 
 def create_enrollment_tool_handler(
-    recorder: EnrollmentRecorder,
+    conductor: "EnrollmentConductor",
     get_speaker_name: Optional[Callable[[], Optional[str]]] = None,
 ) -> Callable[["FunctionCallParams"], Awaitable[None]]:
     async def enrollment_tool_handler(params: "FunctionCallParams") -> None:
@@ -195,11 +170,13 @@ def create_enrollment_tool_handler(
         person = (args.get("person") or "").strip()
         try:
             if action == "start":
+                if conductor.running:
+                    await params.result_callback({"status": "a session is already running"})
+                    return
                 if not person and get_speaker_name is not None:
-                    # The voice verdict races the model's first tool call (the
-                    # probe needs ~3 s of mic audio). Wait for it briefly rather
-                    # than making the user answer a question the VAD tends to
-                    # drop (one-word replies often never commit — observed live).
+                    # The voice verdict races this tool call (the probe needs
+                    # ~3 s of mic audio) — wait for it briefly instead of asking
+                    # a question the VAD tends to drop.
                     for _ in range(12):  # up to ~6 s
                         person = (get_speaker_name() or "").strip()
                         if person:
@@ -214,35 +191,34 @@ def create_enrollment_tool_handler(
                         )}
                     )
                     return
-                recorder.start(person)
                 await _set_wake_sound(False)
+                conductor.start(person)
                 await params.result_callback(
-                    {"status": "recording", "instructions": ENROLLMENT_SCRIPT.format(person=person)}
+                    {"status": "guided session running on the device",
+                     "instructions": (
+                         "An automated audio coach now guides them directly — you are "
+                         "NOT involved. Say one very short acknowledgment (a few "
+                         "words), then output NOTHING further: no commentary, no "
+                         "questions, no tool calls, until this tool reports again."
+                     )}
                 )
             elif action == "stop":
-                info = recorder.stop()
+                await conductor.stop()
                 await _set_wake_sound(True)
-                if not info.get("path"):
-                    await params.result_callback({"status": "no active enrollment session"})
-                else:
-                    await params.result_callback(
-                        {
-                            "status": "saved",
-                            "person": info["person"],
-                            "seconds_recorded": info["seconds"],
-                            "note": "Recording is off. Thank them briefly; the household admin will process the file.",
-                        }
-                    )
+                await params.result_callback(
+                    {"status": "stopped", "note": "Recording is off. Thank them briefly."}
+                )
             elif action == "status":
                 await params.result_callback(
-                    {"recording": recorder.active, "person": recorder.person}
+                    {"recording": conductor.recorder.active, "person": conductor.recorder.person,
+                     "session_running": conductor.running}
                 )
             else:
                 await params.result_callback({"error": f"unknown action '{action}'"})
         except Exception as e:
             logger.error(f"❌ voice_enrollment failed: {e}", exc_info=True)
             try:
-                recorder.stop()
+                await conductor.stop()
                 await _set_wake_sound(True)
             except Exception:
                 pass
@@ -251,3 +227,128 @@ def create_enrollment_tool_handler(
             )
 
     return enrollment_tool_handler
+
+class EnrollmentConductor:
+    """Fixed-schedule audio coach for firmware enrollment mode.
+
+    No conversation mechanics: the device is put into enrollment mode (mic
+    pinned open, wake/stop models disarmed), mic audio flows only to the
+    recorder, and guidance is pre-scripted TTS pushed down the speaker lane on
+    a timed schedule. Cancellable at any moment (device button, tool stop,
+    WS drop)."""
+
+    CHUNK = 4800          # 100 ms of 24 kHz mono PCM16
+    REP_GAP_S = 4.5
+
+    def __init__(self, recorder, broadcast_json, broadcast_bytes, api_key,
+                 phrase="hey leonard", tts_voice="fable"):
+        self.recorder = recorder
+        self.broadcast_json = broadcast_json
+        self.broadcast_bytes = broadcast_bytes
+        self.api_key = api_key
+        self.phrase = phrase or "your wake word"
+        self.tts_voice = tts_voice or "fable"
+        self._task = None
+        self.on_finished = None   # async callback(info: dict) after stop
+
+    @property
+    def running(self):
+        return self._task is not None and not self._task.done()
+
+    async def _tts(self, text):
+        """Synthesize one prompt to 24 kHz mono PCM16, cached in /data."""
+        import hashlib
+        os.makedirs("/data/enroll_prompts", exist_ok=True)
+        key = hashlib.md5(f"{self.tts_voice}:{text}".encode()).hexdigest()
+        path = f"/data/enroll_prompts/{key}.pcm"
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            with open(path, "rb") as f:
+                return f.read()
+        async with httpx.AsyncClient(timeout=30) as client:
+            r = await client.post(
+                "https://api.openai.com/v1/audio/speech",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={"model": "gpt-4o-mini-tts", "voice": self.tts_voice,
+                      "input": text, "response_format": "pcm",
+                      "instructions": "Calm, composed British butler. Brisk but unhurried."},
+            )
+            r.raise_for_status()
+            pcm = r.content
+        with open(path, "wb") as f:
+            f.write(pcm)
+        return pcm
+
+    async def _say(self, text):
+        pcm = await self._tts(text)
+        for i in range(0, len(pcm), self.CHUNK):
+            await self.broadcast_bytes(pcm[i:i + self.CHUNK])
+            await asyncio.sleep(0.095)
+
+    def start(self, person):
+        if self.running:
+            return False
+        self._task = asyncio.get_running_loop().create_task(self._run(person))
+        return True
+
+    async def stop(self):
+        if self._task is not None and not self._task.done():
+            self._task.cancel()
+            try:
+                await self._task
+            except (asyncio.CancelledError, Exception):
+                pass
+        await self._finish()
+
+    async def _finish(self):
+        info = self.recorder.stop() if self.recorder.active else {}
+        try:
+            await self.broadcast_json({"type": "enroll", "mode": "stop"})
+        except Exception:
+            pass
+        if self.on_finished is not None and info.get("path"):
+            try:
+                await self.on_finished(info)
+            except Exception:
+                pass
+        return info
+
+    async def _run(self, person):
+        p = self.phrase
+        try:
+            self.recorder.start(person)
+            await self.broadcast_json({"type": "enroll", "mode": "start"})
+            await asyncio.sleep(0.8)
+            await self._say(
+                f"Voice training. Each time I say 'next', say '{p}' once, "
+                f"naturally. Twenty-five in all, in a few different styles. "
+                f"Press the button on top at any time to stop. Here we go."
+            )
+            await asyncio.sleep(1.0)
+            styles = {9: "Now quickly, as if walking past.",
+                      14: "Now lazily. Mumble it.",
+                      19: "Now from across the room, louder.",
+                      25: "Last one. Any way you like."}
+            for rep in range(1, 26):
+                if rep in styles:
+                    await self._say(styles[rep])
+                    await asyncio.sleep(0.6)
+                await self._say("Next.")
+                await asyncio.sleep(self.REP_GAP_S)
+            await self._say(
+                "Well done. Now talk normally for about ninety seconds. "
+                "Describe your day, read something nearby, or simply ramble. "
+                "Starting now."
+            )
+            await asyncio.sleep(45)
+            await self._say("Keep going.")
+            await asyncio.sleep(45)
+            await self._say("That's everything. Session complete. Thank you.")
+            await asyncio.sleep(2)
+            await self._finish()
+            logger.info("🎓 enrollment conductor finished normally")
+        except asyncio.CancelledError:
+            logger.info("🎓 enrollment conductor cancelled")
+            raise
+        except Exception as e:
+            logger.error(f"❌ enrollment conductor failed: {e}", exc_info=True)
+            await self._finish()

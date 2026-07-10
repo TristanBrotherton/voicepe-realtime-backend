@@ -52,6 +52,7 @@ class RawAudioSerializer(FrameSerializer):
         self._on_wake = None
         self._speaker_probe = None
         self._enrollment_recorder = None
+        self._on_enroll_stopped = None
 
     def set_interrupt_handler(self, handler):
         """Register the async no-arg callback fired on a device 'interrupt'."""
@@ -78,6 +79,11 @@ class RawAudioSerializer(FrameSerializer):
         """Register an EnrollmentRecorder: fed every inbound audio frame while
         an enrollment session is active (guided voice-training capture)."""
         self._enrollment_recorder = recorder
+
+    def set_enroll_stopped_handler(self, handler):
+        """Register the async no-arg callback fired when the DEVICE ends
+        enrollment ({"type":"enroll_stopped"} — button escape or firmware cap)."""
+        self._on_enroll_stopped = handler
 
     @property
     def type(self) -> FrameSerializerType:
@@ -142,6 +148,14 @@ class RawAudioSerializer(FrameSerializer):
                         await self._on_mic_flush()
                     except Exception as e:
                         logger.warning(f"⚠️ device mic-flush handler failed: {e!r}")
+            elif isinstance(data, dict) and data.get("type") == "enroll_stopped":
+                # Device-side enrollment exit (button / firmware safety cap).
+                logger.info("🎓 device ended enrollment")
+                if self._on_enroll_stopped is not None:
+                    try:
+                        await self._on_enroll_stopped()
+                    except Exception as e:
+                        logger.warning(f"⚠️ enroll-stopped handler failed: {e!r}")
             elif isinstance(data, dict) and data.get("type") == "wake":
                 # Sent by va_client on every wake (start_session). Marks a fresh
                 # turn boundary for the dangling-VAD guard: until the user
@@ -172,10 +186,13 @@ class RawAudioSerializer(FrameSerializer):
         if self._speaker_probe is not None:
             self._speaker_probe.feed(message)
 
-        # Voice enrollment: while a session is active, every mic frame is
-        # appended to the enrollment WAV (no-op otherwise).
+        # Voice enrollment: while a session is active, mic audio goes ONLY to
+        # the recorder — OpenAI must not hear it (no VAD commits, no forced
+        # responses, no cost). The device is in enrollment mode with its own
+        # LED/phase; the pipeline simply sees silence.
         if self._enrollment_recorder is not None and self._enrollment_recorder.active:
             self._enrollment_recorder.feed(message)
+            return None
 
         # Create InputAudioRawFrame at the device's mic rate; the InputResampler
         # processor (right after transport.input()) upsamples it to 24 kHz.

@@ -2,6 +2,18 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.9.0 (fork)
+
+- **Firmware-backed voice enrollment** (pairs with firmware commit 5095ed0+):
+  the device enters a true enrollment mode — mic pinned open, wake/stop models
+  disarmed, cyan breathing LED, 10-minute hard cap, center button as physical
+  escape — while an automated audio coach (gpt-4o-mini-tts prompts, cached,
+  pushed down the speaker lane on a fixed schedule) guides 25 varied wake-phrase
+  repetitions plus 90 s of natural speech. Mic audio flows ONLY to the recorder
+  during enrollment: OpenAI hears nothing, so no VAD commits, no forced
+  responses, no cost, no conversation mechanics to fight. New options:
+  `enrollment_phrase`, `enrollment_tts_voice`.
+
 ## 0.8.0 (fork)
 
 - **Voice enrollment**: say "I want to teach you my voice" — the assistant runs
