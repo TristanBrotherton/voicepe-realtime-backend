@@ -2,6 +2,15 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.16.3 (fork)
+
+- Documentation overhaul: marketing README, `docs/` (getting started,
+  configuration reference, features, agent integration, FAQ); repository
+  renamed to `voicepe-realtime` (old URLs redirect). `repository.json` now
+  carries this project's identity (was still the upstream fork's).
+- `enrollment_phrase` default is now "hey leonard" (matches the shipped
+  default wake word); HA UI help text added for all fork options.
+
 ## 0.16.2 (fork)
 
 - **Guaranteed report-back on long delegations**: ask_openclaw now sends the

@@ -1,10 +1,11 @@
 # OpenAI Realtime 2 Voice Agent
 
-Talk to your home with **OpenAI's `gpt-realtime-2`** speech-to-speech model. This
-Home Assistant add-on runs the realtime voice session and bridges it to Home
-Assistant device control (via the official **MCP Server** integration) and optional
-**web search** — so you can say *"alexa, turn off the bedroom lamp"* or *"what's the
-weather tomorrow?"* and get a spoken answer.
+Talk to your home with **OpenAI's Realtime** speech-to-speech models. This Home
+Assistant add-on runs the realtime voice session and bridges it to Home Assistant
+device control (via the official **MCP Server** integration), **web search**,
+**voice timers**, **speaker recognition** with guided voice enrollment,
+**voice-taught memory**, and optional **agent integration** for deep recall and
+long-running task delegation with voice report-back.
 
 It is the cloud-facing half of a two-part project. The other half is custom
 **firmware for the Home Assistant Voice PE** device, which streams microphone audio
@@ -18,29 +19,36 @@ drop-in for the stock HA voice pipeline.
 
 ## What it does
 
-- **Natural voice conversations** with `gpt-realtime-2` (speech in → speech out, no
-  separate STT/TTS step).
+- **Natural voice conversations** (speech in → speech out, no separate STT/TTS
+  step) — interrupt mid-sentence, follow up without re-waking.
 - **Controls Home Assistant** through the official HA *MCP Server* integration —
   lights, switches, scenes, climate, etc., scoped to the entities you expose to
   Assist.
-- **Web search** (on by default) — the assistant can look things up online
-  (weather, news, facts) via a single OpenAI call. Turn it off if you don't want it.
-- **Tunable from the UI** — model, voice, speaking speed, turn detection, a
-  post-reply follow-up window, transcription language, and more. Every option has
-  inline help on the Configuration tab.
+- **Knows who's speaking** — local voice-print identification, guided enrollment
+  by voice ("train my voice"), speaker-gated tools.
+- **Remembers what you teach it** — "remember that…" notes persist across
+  sessions, stored locally, writable only by identified household voices.
+- **Voice timers** — personal spoken announcement, then a gentle bell only if
+  unacknowledged.
+- **Web search** (on by default) — weather, news, facts via a single OpenAI call.
+- **Agent-ready** — connect any external agent for instant memory recall and
+  background tasks that announce their results in the room that asked.
+- **Tunable from the UI** — model, voice, speed, turn detection, follow-up window,
+  language, and more; every option has inline help.
 
 ## Quick start
 
 1. Add this repository to Home Assistant (Settings → Add-ons → Add-on Store → ⋮ →
-   **Repositories**): `https://github.com/TristanBrotherton/voicepe-realtime-backend`
+   **Repositories**): `https://github.com/TristanBrotherton/voicepe-realtime`
 2. Install **OpenAI Realtime 2 Voice Agent** and open its **Configuration** tab.
 3. Paste your **OpenAI API key**, install the HA **MCP Server** integration, expose
    a few entities to Assist, and **Start** the add-on.
 4. Flash the **Voice PE firmware** from
    **[TristanBrotherton/voicepe-realtime-firmware](https://github.com/TristanBrotherton/voicepe-realtime-firmware)**
-   (one-click adopt-and-update in ESPHome Builder; full steps in that repo).
+   (one-click adopt-and-update in ESPHome Builder).
 
-Full step-by-step instructions are on the **Documentation** tab (`DOCS.md`).
+Setup steps are on the **Documentation** tab (`DOCS.md`); the full guides live at
+**<https://github.com/TristanBrotherton/voicepe-realtime>**.
 
 ## Credits
 

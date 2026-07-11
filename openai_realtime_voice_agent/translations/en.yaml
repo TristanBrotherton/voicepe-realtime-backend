@@ -245,3 +245,49 @@ configuration:
     description: >-
       Saves microphone and speaker audio to files inside the add-on, for
       troubleshooting only. Leave off normally.
+
+  # --- 🧩 Fork features ---
+  instance_name:
+    name: "🧩 Fork · Instance name (room)"
+    description: >-
+      Short name for the room/device this instance serves (e.g. kitchen).
+      Used in the Home Assistant sensor names and to route agent
+      announcements back to the right device. One add-on instance per device.
+  wake_sound_entity:
+    name: "🧩 Fork · Wake sound switch entity"
+    description: >-
+      Optional switch entity that enables/disables the device's wake chime,
+      so voice enrollment can silence it during guided training.
+  timer_ring_entity:
+    name: "🧩 Fork · Timer ring switch entity"
+    description: >-
+      The device's timer_ringing switch entity (e.g.
+      switch.voice_pe_timer_ringing). Voice timers announce first, then ring
+      this if unacknowledged. Leave empty to disable ringing.
+  enrollment_phrase:
+    name: "🧩 Fork · Enrollment wake phrase"
+    description: >-
+      The wake phrase practiced during guided voice enrollment. Set it to
+      your actual wake word (default: hey leonard).
+  enrollment_tts_voice:
+    name: "🧩 Fork · Enrollment coach voice"
+    description: >-
+      OpenAI TTS voice used by the enrollment audio coach (default fable).
+  openclaw_url:
+    name: "🧩 Fork · Agent bridge URL"
+    description: >-
+      Direct endpoint of your external agent bridge (POST {"question"} →
+      {"answer"}, {"recall"} → {"matches"}). Enables ask_openclaw without the
+      60-second Home Assistant MCP cap, plus the instant recall_memory tool.
+      Leave empty to use whatever your MCP server exposes.
+  announce_port:
+    name: "🧩 Fork · Announce port"
+    description: >-
+      Port for the LAN announce endpoint (e.g. 8090). External agents POST
+      /announce {"message"} to speak in this room. 0 disables. Requires the
+      announce token too.
+  announce_token:
+    name: "🧩 Fork · Announce token"
+    description: >-
+      Bearer token protecting the announce endpoint. Generate a long random
+      string; anyone on your LAN with this token can speak through the device.

@@ -1,0 +1,138 @@
+# Agent Integration
+
+Connect any external agent to the assistant for three superpowers:
+
+1. **Instant memory recall** — sub-second answers from your agent's long-term memory.
+2. **Deep escalation** — questions and tasks the smart home can't handle itself.
+3. **Voice report-back** — long-running work that announces its result in the room
+   that asked.
+
+**You don't need an agent.** Everything else — conversation, smart-home control,
+timers, memory notes, speaker recognition, web search — works standalone. And the
+integration is **agent-agnostic**: the option is named `openclaw_url` after the
+agent this project runs, but anything that answers two simple POST shapes works.
+
+## The bridge contract
+
+Set `openclaw_url` to an HTTP endpoint you control (a small "bridge" in front of
+your agent). The add-on POSTs JSON to that one URL; the body shape selects the
+operation:
+
+### Escalation — `ask_openclaw`
+
+```
+POST <openclaw_url>
+Content-Type: application/json
+
+{"question": "Research flight prices to London for October", "room": "kitchen"}
+```
+
+```
+200 OK
+{"answer": "Direct flights in October start around ..."}
+```
+
+- `question` — the user's request, with context the model added.
+- `room` — the add-on's `instance_name`, lowercased. Your bridge should remember
+  it: if the work outlasts the voice turn, deliver the eventual answer to that
+  room's [announce endpoint](#the-announce-endpoint).
+- The add-on waits up to **145 seconds** for the answer. If your agent needs
+  longer, have the bridge reply at ~120 s with a "still working on it — I'll
+  report back" style `answer`, keep the task running, and deliver the real result
+  via announce when it's done.
+- The model is instructed to use this only for things Home Assistant can't do
+  itself (memory, messaging, calendar, research, cross-app tasks) — never for
+  smart-home control.
+
+When `openclaw_url` is set, the add-on registers `ask_openclaw` natively and
+skips any same-named tool from the MCP server, so the model sees exactly one.
+This matters: Home Assistant core hard-caps every MCP request at **60 seconds**,
+which kills longer agent turns — the direct route is what gives you the
+2.5-minute budget. Speaker gating (`male_only_tools`) applies to the direct
+route exactly as it does to MCP tools.
+
+### Instant recall — `recall_memory`
+
+```
+POST <openclaw_url>
+Content-Type: application/json
+
+{"recall": "Grandma phone number"}
+```
+
+```
+200 OK
+{"matches": ["Grandma: +1 555 0123 (landline, prefers calls after 10am)"]}
+```
+
+- Return an array of matching lines from your agent's memory/notes files —
+  a plain deterministic text search is exactly right. Speed is the point:
+  this is the assistant's **first stop** for "what's X's number" / "when is Y's
+  birthday" / "what did we decide about Z", and it should answer in well under a
+  second.
+- Return `{"matches": []}` when nothing matches — the assistant then falls back
+  to a full `ask_openclaw` turn.
+
+## The announce endpoint
+
+The reverse direction: your agent (or anything on your LAN) speaks in the room.
+
+Enable it by setting **both** `announce_port` and `announce_token` in the add-on.
+
+```
+POST http://<ha-host>:<announce_port>/announce
+Authorization: Bearer <announce_token>
+Content-Type: application/json
+
+{"message": "Your London flight research is done: direct flights start at ..."}
+```
+
+Responses:
+
+| Status | Body | Meaning |
+|---|---|---|
+| `200` | `{"status": "announced"}` | Spoken on the device |
+| `400` | `{"error": ...}` | Invalid JSON or empty message |
+| `401` | `{"error": "unauthorized"}` | Bad/missing bearer token |
+| `503` | `{"error": "no device connected"}` | Device offline — **fall back to a text channel** |
+| `500` | `{"error": "announcement failed"}` | Playback failed |
+
+Details:
+
+- Messages are capped at **600 characters** — keep report-backs summary-sized.
+- Playback uses the device's **guarded TTS lane** (the same path timers use), so
+  the assistant can't hear its own announcement and reply to it.
+- The add-on runs on the **host network** — the bearer token is the only lock.
+  Generate a long random one and treat it as a secret.
+- One endpoint per add-on instance (per room). A multi-room setup gives your
+  agent one announce URL per room; the `room` field on escalations tells it
+  which one to use.
+
+## The full delegation loop
+
+Putting it together — what a long-running task looks like end to end:
+
+```
+You (kitchen): "Research flight prices to London for October."
+  └─ add-on → bridge: {"question": "...", "room": "kitchen"}      (ask_openclaw)
+       └─ agent starts working…
+  ┌─ bridge → add-on at ~120 s: {"answer": "Still working on it — I'll report back."}
+Assistant: "I'm still looking into it — I'll let you know."
+       └─ agent finishes (5 minutes later, or 50)
+  ┌─ agent → kitchen announce endpoint: {"message": "Flights to London in October…"}
+Device (kitchen): speaks the result out loud.
+       └─ (503? The agent texts you the details instead.)
+```
+
+Fast tasks never touch the announce path — the answer just comes back inside the
+voice turn.
+
+## Checklist
+
+1. Stand up a bridge endpoint that answers the two POST shapes above.
+2. Set `openclaw_url` to it in the add-on configuration.
+3. Set `announce_port` + `announce_token`; give your agent the URL and token
+   (one pair per room/instance).
+4. Optionally gate escalation to a specific speaker via `male_only_tools`.
+5. Say something only your agent would know — then delegate something slow and
+   walk away.
