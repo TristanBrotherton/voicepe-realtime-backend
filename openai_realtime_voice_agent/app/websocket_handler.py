@@ -744,6 +744,23 @@ class WebSocketHandler:
 
             if self.enrollment_recorder is not None:
                 self._serializer.set_enrollment_recorder(self.enrollment_recorder)
+            # Button-cancel shortly after a wake = user flagging a false
+            # trigger: label the latest probe capture like mark_false_wake.
+            async def _on_button_cancel():
+                try:
+                    import os
+                    d = "/share/voice-probes"
+                    files = sorted(f for f in os.listdir(d)
+                                   if f.startswith("probe_") and f.endswith(".wav"))
+                    if files:
+                        latest = files[-1]
+                        os.rename(os.path.join(d, latest),
+                                  os.path.join(d, latest.replace("probe_", "falsewake_", 1)))
+                        logger.info(f"🏷️ button-flagged false wake: {latest}")
+                except Exception as e:
+                    logger.warning(f"⚠️ button false-wake flag failed: {e!r}")
+            self._serializer.set_button_cancel_handler(_on_button_cancel)
+
             if self.enrollment_conductor is not None:
                 async def _on_device_enroll_stopped():
                     await self.enrollment_conductor.stop()

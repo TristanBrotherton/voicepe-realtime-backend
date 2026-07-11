@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+import time
 from pipecat.frames.frames import InputAudioRawFrame, OutputAudioRawFrame, Frame
 from pipecat.serializers.base_serializer import FrameSerializer, FrameSerializerType
 
@@ -53,6 +54,8 @@ class RawAudioSerializer(FrameSerializer):
         self._speaker_probe = None
         self._enrollment_recorder = None
         self._on_enroll_stopped = None
+        self._last_wake_mono = 0.0
+        self._on_button_cancel = None
 
     def set_interrupt_handler(self, handler):
         """Register the async no-arg callback fired on a device 'interrupt'."""
@@ -79,6 +82,10 @@ class RawAudioSerializer(FrameSerializer):
         """Register an EnrollmentRecorder: fed every inbound audio frame while
         an enrollment session is active (guided voice-training capture)."""
         self._enrollment_recorder = recorder
+
+    def set_button_cancel_handler(self, handler):
+        """Async no-arg callback for a button-cancel within 12s of a wake."""
+        self._on_button_cancel = handler
 
     def set_enroll_stopped_handler(self, handler):
         """Register the async no-arg callback fired when the DEVICE ends
@@ -148,6 +155,16 @@ class RawAudioSerializer(FrameSerializer):
                         await self._on_mic_flush()
                     except Exception as e:
                         logger.warning(f"⚠️ device mic-flush handler failed: {e!r}")
+            elif isinstance(data, dict) and data.get("type") == "button_cancel":
+                # Center button silenced an active session. Within a short
+                # window of the wake this is a human flagging a false trigger.
+                dt = time.monotonic() - self._last_wake_mono
+                logger.info(f"🔘 button cancel received ({dt:.1f}s after wake)")
+                if dt <= 12.0 and self._on_button_cancel is not None:
+                    try:
+                        await self._on_button_cancel()
+                    except Exception as e:
+                        logger.warning(f"⚠️ button-cancel handler failed: {e!r}")
             elif isinstance(data, dict) and data.get("type") == "enroll_stopped":
                 # Device-side enrollment exit (button / firmware safety cap).
                 logger.info("🎓 device ended enrollment")
@@ -162,6 +179,7 @@ class RawAudioSerializer(FrameSerializer):
                 # actually speaks, any server-VAD end-of-turn is a stale segment
                 # from the previous turn closing late (→ garbage response).
                 logger.info("👋 device wake received")
+                self._last_wake_mono = time.monotonic()
                 if self._speaker_probe is not None:
                     self._speaker_probe.start_capture()
                 if self._on_wake is not None:
