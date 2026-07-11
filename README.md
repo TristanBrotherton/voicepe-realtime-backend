@@ -7,10 +7,10 @@ It runs on your Home Assistant box. Wake-word detection, speaker identity, voice
 ## What it feels like
 
 **"What's Grandma's number?"**
-Instant recall from your household's long-term memory — answered in under a second. Facts you teach it by voice are built in and stay on your machine; connect your agent and it reaches everything the agent remembers too.
+Instant recall from your household's long-term memory — answered in under a second. Facts you teach it by voice are built in and stay on your machine; connect [OpenClaw](https://openclaw.ai) and it reaches everything your agent remembers too.
 
 **"Research flight prices to London for October."**
-"I'll look into it and report back." It hands the task to your agent, which browses the web in the background for as long as it takes — then the result is **announced out loud in the room you asked from**, or texted to you if you've stepped out. Long-running tasks that find you when they're done.
+"I'll look into it and report back." It hands the task to [OpenClaw](https://openclaw.ai), which browses the web in the background for as long as it takes — then the result is **announced out loud in the room you asked from**, or texted to you if you've stepped out. Long-running tasks that find you when they're done.
 
 **Walking into the kitchen: "Set a pasta timer for 9 minutes."**
 Nine minutes later: *"Alex, your pasta timer is done"* — spoken personally to whoever set it. A gentle bell follows only if nobody responds. Dismiss with a word or the button.
@@ -26,16 +26,16 @@ Speech in, speech out — no STT→LLM→TTS chain, so tone and timing feel huma
 
 ## What people do with it
 
-Marked **†** = needs the optional [agent integration](docs/agent-integration.md). Everything else is built in.
+Marked **†** = needs the optional [agent integration](docs/agent-integration.md) — built for [OpenClaw](https://openclaw.ai), works with any agent. Everything else is built in.
 
 - **"What's the wifi password?"** — say *"remember the wifi password is…"* once, and it's answered instantly forever. Same for the pool gate code, shoe sizes, where the spare key lives.
-- **"When's Grandma's birthday?"** † — sub-second recall from your agent's long-term memory.
+- **"When's Grandma's birthday?"** † — sub-second recall from OpenClaw's long-term memory.
 - **"What did we decide about the fence contractor?"** † — decisions and history, not just facts.
-- **"Text Sam we're running ten minutes late."** † — hands covered in flour; your agent sends it through its channels.
+- **"Text Sam we're running ten minutes late."** † — hands covered in flour; OpenClaw sends it through any of its channels (iMessage, Telegram, WhatsApp, …).
 - **"Call the pharmacy and ask if my prescription is ready, then tell me what they say."** † — pair it with [OpenClaw](https://openclaw.ai) and my [openclaw-voice-call-realtime](https://github.com/TristanBrotherton/openclaw-voice-call-realtime) plugin, which gives your assistant a real phone: it places the call, runs the errand, and the answer is spoken back in the room you asked from.
 - **"Research flights to Tokyo in October and text me the three best options."** † — acknowledged now, browsed in the background for as long as it takes, delivered when done.
 - **"Add everything for lasagna to the shopping list."** — native Home Assistant list tools, instant. Then *"set a pasta timer"* — dismissed or delivered by name when it's done.
-- **A voice for your automations.** † — the announce endpoint accepts any authorized POST, so an agent's scheduled jobs (or any script on your LAN) can speak in the room: *"leave in fifteen minutes for the school run."*
+- **A voice for your automations.** † — the announce endpoint accepts any authorized POST, so OpenClaw's scheduled jobs (or any script on your LAN) can speak in the room: *"leave in fifteen minutes for the school run."*
 
 Longer versions, with the how-it-works behind each: **[Stories](docs/stories.md)**.
 
@@ -46,8 +46,8 @@ Longer versions, with the how-it-works behind each: **[Stories](docs/stories.md)
 - **Custom wake word** — "Hey Leonard" ships as the default (trained by this project); switch to Hey Jarvis / Okay Nabu from a dropdown in HA, or [train your own](docs/features.md#wake-words)
 - **Speaker recognition** — local voice-print identification with guided voice enrollment (say *"train my voice"*)
 - **Voice-instructed memory** — "remember…" / "forget…" / "what do you remember?", speaker-gated writes
-- **Instant memory recall + agent escalation** — sub-second `recall_memory`, deep questions handed to [any agent you integrate](docs/agent-integration.md)
-- **Long-running task delegation** — the agent reports back by voice, in the room that asked, via the announce endpoint
+- **[OpenClaw](https://openclaw.ai) integration** — sub-second `recall_memory` from your agent's memory, deep questions escalated to a full agent turn ([agent-agnostic contracts](docs/agent-integration.md) — any agent that speaks two POST shapes works)
+- **Long-running task delegation** — OpenClaw reports back by voice, in the room that asked, via the announce endpoint
 - **Voice timers** — personal announcement → grace period → gentle bell, dismissed by button or voice
 - **False-wake flagging** — by voice, double-press, or automatically; feeds a [weekly retrain flywheel](docs/features.md#the-retrain-flywheel)
 - **Web search** — current info via a single extra OpenAI call (on by default)

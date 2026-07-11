@@ -133,7 +133,7 @@ history), see the next section.
 
 ## Instant recall & agent escalation
 
-With an external agent connected (`openclaw_url` — see
+With an agent like [OpenClaw](https://openclaw.ai) connected (`openclaw_url` — see
 [Agent Integration](agent-integration.md) for the full contract), the assistant
 gets a two-speed memory path:
 

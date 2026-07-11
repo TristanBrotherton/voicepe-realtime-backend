@@ -83,8 +83,10 @@ coach prompts are English (PRs welcome).
 
 No. Everything except instant deep recall and long-running task delegation works
 standalone: conversation, smart-home control, web search, timers, memory notes,
-speaker recognition, enrollment, sensors. Add an agent later if you want it —
-it's [one URL and two POST shapes](agent-integration.md).
+speaker recognition, enrollment, sensors. When you want those superpowers,
+[OpenClaw](https://openclaw.ai) is what this project is built around and pairs
+with best — but the contract is agent-agnostic:
+[one URL and two POST shapes](agent-integration.md).
 
 ### Why does it say "still working on that"?
 

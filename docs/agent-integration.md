@@ -1,16 +1,49 @@
 # Agent Integration
 
-Connect any external agent to the assistant for three superpowers:
+Connect an external agent to the assistant for three superpowers:
 
 1. **Instant memory recall** — sub-second answers from your agent's long-term memory.
 2. **Deep escalation** — questions and tasks the smart home can't handle itself.
 3. **Voice report-back** — long-running work that announces its result in the room
    that asked.
 
+**This project is built around [OpenClaw](https://openclaw.ai)** — the
+open-source personal agent platform — and OpenClaw is what these features were
+designed and tested against. OpenClaw brings the pieces a voice assistant can't:
+months of long-term memory in plain markdown (which the instant-recall path
+greps directly), channels (iMessage, Telegram, WhatsApp, Discord, …) for
+delivering details, scheduled jobs that can speak through the announce endpoint,
+a browser for real research, and — with the
+[openclaw-voice-call-realtime](https://github.com/TristanBrotherton/openclaw-voice-call-realtime)
+plugin — a real phone.
+
 **You don't need an agent.** Everything else — conversation, smart-home control,
 timers, memory notes, speaker recognition, web search — works standalone. And the
-integration is **agent-agnostic**: the option is named `openclaw_url` after the
-agent this project runs, but anything that answers two simple POST shapes works.
+contracts below are **agent-agnostic**: the option is named `openclaw_url` after
+the agent this project runs, but anything that answers two simple POST shapes
+works.
+
+## OpenClaw in five minutes
+
+The bridge in front of OpenClaw is a ~100-line Node HTTP server on the machine
+where OpenClaw's gateway runs:
+
+- `{"question", "room"}` → spawn `openclaw agent --agent main --session-key
+  voicepe-<unique> --message "<voice directive> <question>"` and return its
+  stdout as `answer`. The directive tells the agent to act immediately, reply in
+  one spoken sentence, be thorough on lookups, save found facts to memory, and
+  report long work back via the announce endpoint for the asking `room`.
+- `{"recall"}` → grep OpenClaw's own memory files (`MEMORY.md`, recent
+  `memory/*.md` dailies and person-files) and return matching lines. No agent
+  turn — that's the whole trick behind sub-second recall.
+- If a turn outlives ~120 s, reply `{"answer": "Still working on that — I'll
+  tell you when it's ready."}`, let the turn finish, and POST the eventual
+  answer to the room's announce endpoint yourself — report-back becomes a
+  guarantee, not a hope.
+
+Teach OpenClaw the announce endpoint once (a short note in its workspace
+`TOOLS.md` with the curl command and the per-room ports) and its own scheduled
+jobs and long tasks can speak in the house too.
 
 ## The bridge contract
 
