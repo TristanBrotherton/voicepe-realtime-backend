@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question / setup help
+    url: https://github.com/TristanBrotherton/voicepe-realtime/blob/main/docs/faq.md
+    about: Check the FAQ and docs first — most setup questions are answered there.

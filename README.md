@@ -96,6 +96,7 @@ Full walkthrough (~30–45 minutes from zero): **[Getting Started](docs/getting-
 | [Features](docs/features.md) | Wake words, speaker recognition, memory, timers, false-wake flywheel, web search, sensors, persona |
 | [Agent Integration](docs/agent-integration.md) | The bridge contracts: recall, escalation, and the announce endpoint — works with any agent |
 | [FAQ](docs/faq.md) | Cost, privacy, reverting to stock, Raspberry Pi, languages, and more |
+| [Contributing](CONTRIBUTING.md) | PRs welcome — small, tested, explained |
 
 The firmware lives in its own repo: **[TristanBrotherton/voicepe-realtime-firmware](https://github.com/TristanBrotherton/voicepe-realtime-firmware)**.
 
