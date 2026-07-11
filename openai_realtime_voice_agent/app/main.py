@@ -18,6 +18,7 @@ from app.audio_recording_service import AudioRecordingService
 from app.session_manager import SessionManager
 from app.websocket_handler import WebSocketHandler
 from app.speaker_context import SpeakerProbe
+from app.timers import TimerRegistry, get_timer_tool_definitions, register_timer_tools
 from app.enrollment import (
     EnrollmentRecorder,
     EnrollmentConductor,
@@ -480,6 +481,9 @@ class Application:
         elif male_only_tools:
             logger.warning("⚠️ male_only_tools set but no speaker names configured — gate inactive")
 
+        # Voice timers: backend-owned registry, device rings via TIMER_RING_ENTITY.
+        self.timer_registry = TimerRegistry()
+
         # Voice enrollment (fork): guided on-device voice capture, always available.
         self.enrollment_recorder = EnrollmentRecorder()
         self.websocket_handler.enrollment_recorder = self.enrollment_recorder
@@ -607,6 +611,7 @@ class Application:
             # Voice enrollment tool (fork): guided voice-training capture.
             all_tools.append(get_enrollment_tool_definition())
             all_tools.append(get_false_alarm_tool_definition())
+            all_tools.extend(get_timer_tool_definitions())
 
             # Get MCP tool definitions if available
             mcp_tools_schema = None
@@ -767,6 +772,8 @@ class Application:
             self.openai_service.register_function(
                 "mark_false_wake", create_false_alarm_tool_handler()
             )
+            register_timer_tools(self.openai_service, self.timer_registry)
+            logger.info("✅ Registered timer tools (set/cancel/list)")
 
             # Register MCP tool handlers if available
             if self.mcp_client and mcp_tools_schema:
