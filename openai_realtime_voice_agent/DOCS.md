@@ -68,6 +68,17 @@ directly with a ~2.5-minute timeout; an MCP tool of the same name is skipped
 so the model sees exactly one. Leave blank to use whatever your MCP server
 exposes, unchanged.
 
+**`announce_port` + `announce_token`** (optional, set both): a LAN route *back to
+the device* for an external agent. `POST http://<ha-host>:<announce_port>/announce`
+with `Authorization: Bearer <announce_token>` and body `{"message": "..."}` speaks
+the message aloud through the device's guarded TTS lane (the same path timers
+use — the assistant can't hear itself and reply). This is what lets a delegated
+task ("research a vacation") report back by voice minutes later: the agent
+replies instantly that it will follow up, works in the background, then posts
+its summary here. Returns 503 when no device is connected, so callers can fall
+back to a text channel. Generate a long random token; the add-on runs on the
+host network, so the token is the lock.
+
 ## 4. Recommended starting settings
 
 **The defaults are the recommended settings** — for a first run you only need the

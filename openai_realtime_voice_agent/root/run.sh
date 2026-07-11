@@ -40,6 +40,8 @@ HA_MCP_URL=$(bashio::config 'ha_mcp_url')
 LONGLIVED_TOKEN=$(bashio::config 'longlived_token')
 MCP_TOOL_ALLOWLIST=$(bashio::config 'mcp_tool_allowlist')
 OPENCLAW_URL=$(bashio::config 'openclaw_url')
+ANNOUNCE_PORT=$(bashio::config 'announce_port')
+ANNOUNCE_TOKEN=$(bashio::config 'announce_token')
 
 # --- ⚙️ Advanced ---
 WEBSOCKET_PORT=$(bashio::config 'websocket_port')
@@ -84,6 +86,8 @@ export NOISE_REDUCTION
 export LONGLIVED_TOKEN
 export MCP_TOOL_ALLOWLIST
 export OPENCLAW_URL
+export ANNOUNCE_PORT
+export ANNOUNCE_TOKEN
 export WEBSOCKET_PORT
 export SESSION_REUSE_TIMEOUT_SECONDS
 export MAX_CONTEXT_MESSAGES

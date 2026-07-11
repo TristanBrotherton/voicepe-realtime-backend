@@ -19,6 +19,7 @@ from app.session_manager import SessionManager
 from app.websocket_handler import WebSocketHandler
 from app.speaker_context import SpeakerProbe
 from app.timers import TimerRegistry, get_timer_tool_definitions, register_timer_tools
+from app.announce_http import start_announce_server
 from app.openclaw_tool import (
     get_openclaw_tool_definition,
     openclaw_url,
@@ -530,6 +531,19 @@ class Application:
                 getattr(self.websocket_handler._serializer, "_last_button_mono", 0.0),
             ) if self.websocket_handler._serializer else 0.0
         )
+
+        # Announce endpoint (fork): a LAN route back to the device so the
+        # household's agent can speak results of long-running work. Reuses the
+        # guarded announcer above; off unless both port and token are set.
+        announce_port = int(os.environ.get("ANNOUNCE_PORT", "0") or 0)
+        announce_token = os.environ.get("ANNOUNCE_TOKEN", "").strip()
+        if announce_port and announce_token:
+            await start_announce_server(
+                announce_port, announce_token, _guarded_say,
+                lambda: self.websocket_handler._serializer is not None,
+            )
+        elif announce_port or announce_token:
+            logger.warning("⚠️ announce endpoint needs BOTH announce_port and announce_token — disabled")
 
         self.websocket_transport = self.websocket_handler.create_transport()
         

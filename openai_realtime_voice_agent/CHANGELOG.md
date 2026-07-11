@@ -2,6 +2,15 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.16.0 (fork)
+
+- **Announce endpoint** (`announce_port` + `announce_token` options): a LAN
+  route back to the device for the household's external agent. POST
+  `/announce {"message": "..."}` (bearer-authed) speaks the message through
+  the device's guarded TTS lane — the same path timers use — so a delegated
+  task ("research X") can report back by voice minutes later. Disabled unless
+  both options are set; 503 when no device is connected.
+
 ## 0.15.1 (fork)
 
 - **Direct OpenClaw escalation** (`openclaw_url` option): `ask_openclaw` now

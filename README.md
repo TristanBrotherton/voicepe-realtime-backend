@@ -197,6 +197,7 @@ supported path today.
 | `noise_reduction` | Usually `off` — the device's XMOS already filters |
 | `mcp_tool_allowlist` | Trim the toolset for speed/cost |
 | `openclaw_url` | Direct agent-escalation endpoint (dodges HA MCP's 60s cap) |
+| `announce_port` / `announce_token` | Let an external agent speak in the room (async task report-back) |
 
 Recordings in `/share/voice-enrollment` and `/share/voice-probes` are personal
 data: they stay on your machine and are never uploaded by this add-on.
