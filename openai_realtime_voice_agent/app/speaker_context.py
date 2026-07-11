@@ -135,7 +135,14 @@ class SpeakerProbe:
             logger.warning(f"⚠️ voiceprint identify failed: {e!r}")
             level, name, score = "unavailable", None, 0.0
         if level == "match":
-            label = "male" if name == self.male_name else ("female" if name == self.female_name else "match")
+            # Centroids store lowercase names; options may be capitalized.
+            nl = (name or "").lower()
+            if nl == (self.male_name or "").lower():
+                label, name = "male", self.male_name
+            elif nl == (self.female_name or "").lower():
+                label, name = "female", self.female_name
+            else:
+                label = "match"  # enrolled non-household print
             return label, name, score, "voiceprint"
         if level == "unknown":
             return "unknown", None, score, "voiceprint"
