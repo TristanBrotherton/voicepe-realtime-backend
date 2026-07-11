@@ -25,8 +25,10 @@ works.
 
 ## OpenClaw in five minutes
 
-The bridge in front of OpenClaw is a ~100-line Node HTTP server on the machine
-where OpenClaw's gateway runs:
+**A ready-to-run reference bridge ships in this repo:**
+[`examples/openclaw-bridge/`](../examples/openclaw-bridge/) — one dependency-free
+Node file plus a setup README (secrets, service files for macOS/Linux, the
+TOOLS.md snippet that teaches OpenClaw to announce, smoke tests). What it does:
 
 - `{"question", "room"}` → spawn `openclaw agent --agent main --session-key
   voicepe-<unique> --message "<voice directive> <question>"` and return its

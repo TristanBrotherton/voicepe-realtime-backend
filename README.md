@@ -46,7 +46,7 @@ Longer versions, with the how-it-works behind each: **[Stories](docs/stories.md)
 - **Custom wake word** — "Hey Leonard" ships as the default (trained by this project); switch to Hey Jarvis / Okay Nabu from a dropdown in HA, or [train your own](docs/features.md#wake-words)
 - **Speaker recognition** — local voice-print identification with guided voice enrollment (say *"train my voice"*)
 - **Voice-instructed memory** — "remember…" / "forget…" / "what do you remember?", speaker-gated writes
-- **[OpenClaw](https://openclaw.ai) integration** — sub-second `recall_memory` from your agent's memory, deep questions escalated to a full agent turn ([agent-agnostic contracts](docs/agent-integration.md) — any agent that speaks two POST shapes works)
+- **[OpenClaw](https://openclaw.ai) integration** — sub-second `recall_memory` from your agent's memory, deep questions escalated to a full agent turn; a [ready-to-run bridge](examples/openclaw-bridge/) ships in this repo ([contracts are agent-agnostic](docs/agent-integration.md))
 - **Long-running task delegation** — OpenClaw reports back by voice, in the room that asked, via the announce endpoint
 - **Voice timers** — personal announcement → grace period → gentle bell, dismissed by button or voice
 - **False-wake flagging** — by voice, double-press, or automatically; feeds a [weekly retrain flywheel](docs/features.md#the-retrain-flywheel)
