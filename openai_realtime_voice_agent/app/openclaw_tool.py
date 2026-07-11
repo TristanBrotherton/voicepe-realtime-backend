@@ -95,9 +95,12 @@ def register_openclaw_tool(llm) -> None:
         if not question:
             await params.result_callback({"error": "empty question"})
             return
+        # room tells the bridge which device to announce late answers on when
+        # a turn outlives the sync window (guaranteed report-back).
+        room = os.environ.get("INSTANCE_NAME", "").strip().lower()
         try:
             async with httpx.AsyncClient(timeout=ASK_TIMEOUT_S) as client:
-                r = await client.post(openclaw_url(), json={"question": question})
+                r = await client.post(openclaw_url(), json={"question": question, "room": room})
                 r.raise_for_status()
                 answer = (r.json() or {}).get("answer", "").strip()
         except Exception as e:

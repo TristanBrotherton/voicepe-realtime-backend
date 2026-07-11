@@ -2,6 +2,14 @@
 
 All notable changes to this add-on. Newest first.
 
+## 0.16.2 (fork)
+
+- **Guaranteed report-back on long delegations**: ask_openclaw now sends the
+  instance name as `room`; the bridge answers "still working" at 120s instead
+  of killing the turn, and delivers the agent's eventual answer to that room's
+  announce endpoint itself. Previously a >145s research task was reported as
+  a failure by voice while the agent kept working with nowhere to deliver.
+
 ## 0.16.1 (fork)
 
 - **`recall_memory` tool** (with `openclaw_url`): instant deterministic search
