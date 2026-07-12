@@ -88,6 +88,23 @@ speaker recognition, enrollment, sensors. When you want those superpowers,
 with best — but the contract is agent-agnostic:
 [one URL and two POST shapes](agent-integration.md).
 
+### It replied to the TV / a conversation it overheard — how do I stop that?
+
+The mic stays open briefly after each reply (the follow-up window, so you can
+answer back without re-waking it). Background speech caught in that window can
+be transcribed and answered — and each answer reopens the window, which is how
+one stray fragment becomes a rambling exchange. Two levers:
+
+1. **Instructions** (the big one): tell it silence is allowed. Add something
+   like: *"You will often overhear speech not addressed to you (TV, people
+   talking to each other, fragments). When that happens, produce no spoken
+   output at all — remain silent. Only respond when you are reasonably sure
+   you were addressed."* Silent responses also break the reply→window→reply
+   cascade.
+2. **Shorten the window**: lower `follow_up_listen_seconds` (less open-mic
+   exposure, at the cost of tighter follow-up timing), and keep
+   `vad_eagerness: low` so fragments are less likely to commit as turns.
+
 ### Why does it say "still working on that"?
 
 You asked for something long-running (research, a multi-step agent task). Rather
